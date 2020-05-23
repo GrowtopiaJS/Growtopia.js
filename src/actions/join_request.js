@@ -25,7 +25,7 @@ module.exports = function(main, packet, peerid, p) {
 
   if (world) {
     player = main.players.get(peerid);
-    player.currentWorld = name
+    player.currentWorld = name;
 
     world.players.push(player);
     main.worlds.set(name, world);
