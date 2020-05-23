@@ -178,7 +178,19 @@ module.exports = {
         player.tankIDPass = player.tankIDPass.length > 0 ? hmac.update(player.tankIDPass).digest('hex') : '';
         player.states = [];
         player.hasClothesUpdated = false;
-        player.permissions = player.isGuest ? 0 : (player.permissions === 0 ? 1 : player.permissions)
+        player.permissions = player.isGuest ? 0 : (player.permissions === 0 ? 1 : player.permissions);
+        
+        for (let [k, v] of main.worlds) {
+          if (player.worldsOwned.includes(v.name)) continue;
+
+          if (v.owner.id === player.id)
+            player.worldsOwned.push(v.name);
+        }
+        
+        if (!player.id) {
+          main.lastID += 2;
+          player.id = main.lastID;
+        }
 
         if (player.roles.length <= 1) {
           if (player.permissions <= 0) {
@@ -197,8 +209,11 @@ module.exports = {
           }
         }
 
-        let isMod = player.permissions & Constants.Permissions.mod;
-        let isAdmin = player.permissions & Constants.Permissions.admin;
+        if (main.mods.includes(player.tankIDName) && !player.roles.includes('mod')) player.addRole('mod');
+        if (main.admins.includes(player.tankIDName) && !player.roles.includes('admin')) player.addRole('admin');
+
+        let isMod = player.permissions & Constants.Permissions.mod || player.roles.includes('mod');
+        let isAdmin = player.permissions & Constants.Permissions.admin || player.roles.includes('admin');
 
         if (isMod > 0 && isAdmin === 0)
            player.displayName = '`#@' + player.displayName;
@@ -210,7 +225,7 @@ module.exports = {
             if (currentPlayer.temp.peerid === player.temp.peerid)
               continue;
 
-            if (player.tankIDName && player.tankIDName === currentPlayer.tankIDName) {
+            if (player.tankIDName && player.tankIDName === currentPlayer.tankIDName || (player.isGuest && currentPlayer.isGuest && player.mac === currentPlayer.mac)) {
 
               p.create()
                 .string('OnConsoleMessage')
@@ -228,12 +243,9 @@ module.exports = {
               main.Packet.sendPacket(peer, p.return().data, p.return().len);
               p.reconstruct();
 
-              main.Packet.sendQuit(peer);
-
               fromDiscon = true;
-
-              if (currentPlayer.currentWorld)
-                main.Packet.sendPlayerLeave(peer);
+              main.Packet.sendPlayerLeave(peer);
+              main.Packet.sendQuit(peer);
 
               main.disconnects.set(peer, currentPlayer);
               main.players.delete(peer);

@@ -2,7 +2,7 @@ const Constants = require('../structs/Constants');
 
 module.exports = {
   name: 'nick',
-  requiredPerms: 2,
+  requiredPerms: 4,
   run: function(main, arguments, peerid, p) {
     let player = main.players.get(peerid);
     let nick = arguments.join(' ');
@@ -27,35 +27,21 @@ module.exports = {
         nick = '`#@' + nick;
       else if (isAdmin > 0)
         nick = '`6@' + nick;
-    }
+    } 
 
     player.displayName = nick;
-
-    nick = `\`\`\`0${nick}`;
 
     p.create()
       .string('OnConsoleMessage')
       .string(`Changed your nickname to \`w${nick}`)
       .end();
 
+    if (player.worldsOwned.includes(player.currentWorld))
+      nick = `\`2${nick}`;
+
     main.Packet.sendPacket(peerid, p.return().data, p.return().len);
     p.reconstruct();
 
-    for (let peer of [...main.players.keys()]) {
-      if (!main.Host.checkIfConnected(peer))
-        continue;
-
-      if (main.Host.isInSameWorld(peerid, peer)) {
-        let p2 = p.create()
-          .string('OnNameChanged')
-          .string(nick)
-          .end()
-          .return();
-
-        p2.data.writeIntLE(player.netID, 8, 4);
-        main.Packet.sendPacket(peer, p2.data, p2.len);
-        p.reconstruct();
-      }
-    }
+    main.Packet.setNickname(peerid, nick)
   }
 };

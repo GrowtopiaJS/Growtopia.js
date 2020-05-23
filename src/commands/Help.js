@@ -8,7 +8,7 @@ module.exports = {
       if ((value.requiredPerms & player.permissions) || value.requiredPerms === 0 || player.permissions > value.requiredPerms)
         commands.push(key);
     }
-
+    
     p.create()
       .string('OnConsoleMessage')
       .string(`Available commands: \`w${commands.map(command => `/${command}`).join(' ')}`)

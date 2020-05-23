@@ -1,6 +1,6 @@
 module.exports = {
   name: 'info',
-  requiredPerms: 4,
+  requiredPerms: 1,
   run: function(main, arguments, peerid, p) {
     let player = main.players.get(peerid);
     let msg = `Your Info:\n`;

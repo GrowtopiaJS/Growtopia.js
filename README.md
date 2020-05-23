@@ -1,67 +1,50 @@
-# GTPS Wrapper
-Growtopia.js is the first ever Growtopia Private Server coded with NodeJS. Inspired by [Growtopia Noob's Private Server](https://github.com/GrowtopiaNoobs/GrowtopiaServer)
-This uses it's own C++ Code. Packet creation, send world, generate world, packet decoding is done on node.js. Packet sending is done in C++ though.
+# Growtopia.js
+The first ever Growtopia Private server coded with NodeJS and a little mix of C++ for sending packets/enet server.
 
-## Running
-You would have to make a sepearate .js file and copy the example below.  
-Install the required packages first by doing `npm install`.  
-For the webserver, simply run `node web.js` on a separate terminal/cmd/shell, or run your own! (if you've already set it up)  
-You would also need `enmap`, you can simply run `npm install enmap` to install it. If you receive an error about `node-gyp`, kindly do `npm install node-gyp -g`. If it still won't install, kindly ask support on [our discord](https://discord.gg/3NrVX8s)
+## Installation
+There are programs that you would need to install in order to run this. Most of those can be avoided (building the C++ addon) by downloading a pre-built binary [here](https://lukewarmcat.codes/gjs/). If your nodejs version and OS is not there, you're out of luck since you would need to build the C++ addon. For instructions on how to build, read below. Otherwise, you can skip and go to `Installing Packages`  
 
-## Example
+### Building C++ Addon
+Requirements:
+- node-gyp  
+- windows-build-tools (build-essential for linux)  
+- nodejs v12+  
+- enet
+
+**What to do?**  
+- If you don't have node-gyp and any build tools installed, open powershell as adminsistrator (terminal on linux) and run `npm install -g node-gyp windows-build-tools`. For linux, do `npm install -g node-gyp` then, install `build-essential`. `sudo apt get install build-essential` for distros that use `apt` or `sudo yum install build-essential` for distros that use `yum`.  
+
+- Install enet at http://enet.bespin.org/Installation.html . For windows, you can just download the `.tar.gz` file and get the `enet64.lib` there and put it inside the `lib` folder. If that doesn't work, try at the `lib/build` folder. You could also place it at the location where your static lib files are located. And you also need the `enet` folder inside the `include` directory. Place it inside the `lib` folder of the project. If that doesn't work, place it on the dir where the headers are located, specifically just `enet/enet.h`. Make sure to put `enet.h` inside a folder named `enet`. For linux, you can follow their site as you just compile it and it would install.  
+
+- After all that, install `node-addon-api` by doing `npm install node-addon-api`. Now go inside the `/lib` folder and type `node-gyp rebuild -j 8` (8) is the number of threads to use for parallel compilling.
+
+### Installing Packages
+- A simple `npm install` will install everything needed. But you can do it one by one if you'd like. These are the needed packages:
+  - enmap
+  - better-sqlite-pool
+  - restana
+
+## Sending to all peers
+If you would like to send or do something will all the peers connected, you can use the `Packet#broadcast` function. Here is an example.  
 ```js
-const { Main } = require('./index.js');
-const Server = new Main({
-  port: 17091, // note: this is the default value, you can not include this if you'd like.
-  channels: 32, // note: this is the default value, you can not include this if you'd like.
-  peers: 2, // note: this is the default value, you can not include this if you'd like.
-  bandwith: {
-    incoming: 0, // note: this is the default value, you can not include this if you'd like.
-    outgoing: 0 // note: this is the default value, you can not include this if you'd like.
-  },
-  location: 'items.dat', // note this is the default value, you can not include this if you'd like.
-  cdn: '0098/CDNContent61/cache/', // note: this is the default value, you can not include this if you'd like.
-  commandsDir: `${__dirname}/src/commands`, // note: this is the default value, you can not include this if you'd like
-  secretKey: 'growtopia.js' // The secret key to use to encrypt passwords, PLEASE CHANGE THIS AND DO NOT TELL ANYONE YOU DON'T TRUST
+main.Packet.broadcast((peer) => {
+  p.create()
+    .string('OnConsoleMessage')
+    .string('Hello')
+    .end();
+
+  main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+  p.reconstruct();
 });
-
-Server.Host.init();
-Server.Host.create();
-
-Server.on('connect', (peerid) => console.log(`A client connected with peer ${peerid}`));
-Server.on('receive', (packet, peerid) => {
-  // do stuff when you receive data from the server
-});
-Server.on('disconnect', (peerid) => console.log(`A client disconnected with peer ${peerid}`));
-
-Server.Host.start()
-```
-
-## Creating Commands
-In Growtopia.js, you can easily create commands. You would need to create a file for it inside the given commands directory, or by default `src/commands`. It must have the .js extension. After creating you would need to make an object that would contain the properties: `name` and the function `run`. The `run` function has 3 parameters, `main` (the one that has access to most/all methods), `arguments` (an array of strings which are the given arguments for the command, or none if a player didn't give), `peerid` (the id of the peer that ran the command, can be used to send data to). `p` would be the `PacketCreator` which you can create packets with. Here is an example of a command:
-```js
-module.exports = {
-  name: 'hello',
-  requiredPerms: 0,
-  run: function(main, arguments, peerid, p) {
-    p.create()
-      .string('OnConsoleMessage')
-      .string(`Hello ${main.players.get(peerid).displayName}`)
-      .end();
-
-    main.Packet.sendPacket(peerid, p.return().data, p.return().len);
-    p.reconstruct(); // this is needed so that other features that will use the same PacketCreator instance can create/recreate packets.
-  }
-};
-```
-
-Based on this example, it would say `Hello yourNameHere`. Required perms is not needed as they can be omitted since the default is undefined. You can check the `Constants.Permissions` object to see what are the available permissions. That's how you can create your commands. No need to handle how they are loaded as it is handled upon start. When modifying a command, you would need to restart the server. This will be fixed, but not soon as it's not very important.
-
-## Docs
-Our docs are automaticlly made. They're in /docs.
+```  
+That would send "Hello" to all peers connected. You can add options for sending as well, it would be the 2nd argument and would be an object. Here are available options:  
+- `options.sameWorldCheck: (bool)` This would check if `options.peer` is in the same world with the other peers. Default: **false**  
+- `options.peer: (string)` The id of the peer to be used for comparisons.  
+- `options.runIfSame: (bool)` This is to indicate if it would run the callback if the peer and `options.peer` matches. Default: **false**  
+- `options.runIfNotSame: (bool)` This is the opposite of `options.runIfSame`. Default: **false**
 
 ## TODO
-- [ ] Update Docs  
+- [x] Update Docs  
 - [x] Inventory  
 - [x] Disconnection Issues Fixed  
 - [ ] Plant Trees  

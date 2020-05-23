@@ -12,6 +12,13 @@ module.exports = {
     admin: 8
   },
 
+  Blocktypes: {
+    locks: 3,
+    consumables: 8,
+    foreground: 17,
+    background: 18
+  },
+
   ItemEffects: {
     Fist: 0x808000,
     'Cyclopean Visor': 0x808001,
@@ -48,6 +55,7 @@ module.exports = {
     'Baseball Glove': 0x808036,
     Basketball: 0x808037,
     'Party Blaster': 0x808040,
-    "Rayman's Fist": 0x808050
+    "Rayman's Fist": 0x808050,
+    'Spirit of Anubis': 0x808087
   }
 }

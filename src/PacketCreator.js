@@ -138,6 +138,14 @@ class PacketCreator {
 
     return this;
   }
+  
+  /**
+   * Appends floats to the packet
+   * @param {Float} val The fist float to append
+   * @param {Float} val2 The second float to append
+   * @param {Float} val3 The third float to append
+   * @returns {PacketCreator}
+   */
 
   float(val, val2, val3) {
     let addLen = 0;

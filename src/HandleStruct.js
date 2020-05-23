@@ -1,6 +1,6 @@
 const Constants = require('./structs/Constants');
 const PlayerMoving = require('./structs/PlayerMoving');
-const wings = [156, 350, 362, 678, 736, 818, 1166, 1206, 1460, 1550, 1574, 1672, 1674, 1738, 1780, 1784, 1824, 1934, 1936, 1938, 1970, 2158, 2160, 2162, 2164, 2166, 2168, 2254, 2256, 2258, 2260, 2262, 2264, 2390, 2392, 2438, 2538, 2642, 2722, 2776, 2930, 2932, 2982, 3104, 3112, 3114, 3120, 3134, 3134, 3144, 3308, 3442, 3512, 3858, 4184, 4412, 4414, 4534, 4628, 4970, 4972, 4986, 5020, 5322, 5738, 5754, 6004, 6144, 6284, 6334, 6694, 6758, 6818, 6842, 7104, 7350, 7582, 9394];
+const wings = [156, 350, 362, 678, 736, 818, 1166, 1206, 1460, 1550, 1574, 1672, 1674, 1738, 1780, 1784, 1824, 1934, 1936, 1938, 1970, 2158, 2160, 2162, 2164, 2166, 2168, 2254, 2256, 2258, 2260, 2262, 2264, 2390, 2392, 2438, 2538, 2642, 2722, 2776, 2930, 2932, 2982, 3104, 3112, 3114, 3120, 3134, 3134, 3144, 3308, 3442, 3512, 3858, 4184, 4412, 4414, 4534, 4628, 4970, 4972, 4986, 5020, 5322, 5738, 5754, 6004, 6144, 6284, 6334, 6694, 6758, 6818, 6842, 7104, 7350, 7582, 9006, 9394];
 
 module.exports = function(main, packet, peerid, p) {
   const type = main.Packet.GetStructPointerFromTankPacket(packet);
@@ -9,41 +9,46 @@ module.exports = function(main, packet, peerid, p) {
   switch(type) {
     case 0: {
       let player = main.players.get(peerid);
+      let world = main.worlds.get(player.currentWorld);
       player.x = Math.floor(data.x);
       player.y = Math.floor(data.y);
 
       player.temp.MovementCount++;
       if (player.temp.MovementCount < 2) {
-        let peers = [...main.players.keys()]
+        if (world.owner.id === player.id)
+          main.Packet.setNickname(peerid, `\`2${player.displayName}`);
 
-        for (let i = 0; i < peers.length; i++) {
-          if (!main.Host.checkIfConnected(peers[i]))
-            continue;
-
+        main.Packet.broadcast(function(peer) {
           if (wings.includes(player.clothes.back)) {
-            player.addState('canDoubleJump')
+            player.addState('canDoubleJump');
             return main.Packet.sendState(peerid);
           }
+        }, {
+          sameWorldCheck: true,
+          world: player.currentWorld,
+          peer: peerid,
+          runIfNotSame: true,
+          runFunctionFirst: true
+        });
 
-          if (peerid === peers[i])
-            continue;
-
-          if (!main.Host.isInSameWorld(peerid, peers[i]))
-            continue;
-        }
+        main.Packet.broadcast(function(peer) {
+          main.Packet.sendState(peer);
+        }, {
+          sameWorldCheck: true,
+          world: player.currentWorld,
+          peer: peerid,
+          runIfNotSame: true
+        });
       }
 
       main.players.set(peerid, player);
       main.Packet.sendPData(peerid, data);
-      for (let peer of [...main.players.keys()]) {
-        if (main.Host.isInSameWorld(peerid, peer))
-          main.Packet.sendState(peer);
-      }
 
       if (!player.hasClothesUpdated) {
         player.hasClothesUpdated = true;
         main.players.set(peerid, player);
         main.Packet.updateAllClothes(peerid);
+        main.Packet.sendState(peerid);
       }
       break;
     }
@@ -198,11 +203,17 @@ module.exports = function(main, packet, peerid, p) {
       if (main.getItems().get(data.plantingTree).actionType === 1) return;
 
       if (data.plantingTree === 18) {
+        // BREAK BLOCKS
         let block;
 
-        if (world.owner.length > 0 && !world.isPublic && world.owner !== player.tankIDName) {
+        if (world.owner.id && world.owner.id !== player.id && !world.isPublic && player.permissions < Constants.Permissions.worldOwner) {
           main.Packet.sendNothing(peerid, x, y, 0, -1);
-          return main.Packet.sendSound(peerid, 'audio/punch_locked.wav', 0);
+          return main.Packet.broadcast(function(peer) {
+            main.Packet.sendSound(peerid, 'audio/punch_locked.wav', 0);
+          }, {
+            sameWorldCheck: true,
+            peer: peerid
+          });
         }
         
         if (world.items[x + (y * world.width)].background > 0)
@@ -229,52 +240,81 @@ module.exports = function(main, packet, peerid, p) {
           main.Packet.sendPacket(peerid, p.return().data, p.return().len);
           return p.reconstruct();
         }
-          let worldBlock = world.items[x + (y * world.width)];
-          let punchedBlock = main.getItems().get(worldBlock.foreground > 0 ? worldBlock.foreground : worldBlock.background);
+        let worldBlock = world.items[x + (y * world.width)];
+        let punchedBlock = main.getItems().get(worldBlock.foreground > 0 ? worldBlock.foreground : worldBlock.background);
 
-          if (punchedBlock) {
-            
-            if (worldBlock.breakLevel < (punchedBlock.breakHits / 6) - 1) {
-              // not destroyed yet
-              worldBlock.breakLevel++;
+        if (punchedBlock) {
+          if (worldBlock.breakLevel < (punchedBlock.breakHits / 6) - 1) {
+            // not destroyed yet
+            worldBlock.breakLevel++;
 
-              _data.packetType = 0x8;
-              _data.plantingTree = worldBlock.breakLevel + 1;
+            _data.packetType = 0x8;
+            _data.plantingTree = worldBlock.breakLevel + 1;
 
-              setTimeout(() => {
-                if (worldBlock.breakLevel !== worldBlock.breakLevel + 1) {
-                  // clear it
-                  worldBlock.breakLevel = 0;
-                }
-              }, 12000);
+            setTimeout(() => {
+              if (worldBlock.breakLevel !== worldBlock.breakLevel + 1) {
+                // clear it
+                worldBlock.breakLevel = 0;
+              }
+            }, punchedBlock.dropChance * 1000); // dropChance might be the correct value but incorrect name
 
-              world.items[x + (y * world.width)] = worldBlock;
-              main.worlds.set(world.name, world);
+            world.items[x + (y * world.width)] = worldBlock;
+            main.worlds.set(world.name, world);
 
-              for (let peer of [...main.players.keys()]) {
-                if (main.Host.isInSameWorld(peerid, peer) && main.Host.checkIfConnected(peer)) {
-                  main.Packet.sendNothing(peer, x, y, _data.plantingTree, player.netID);
-                }
+            main.Packet.broadcast(function(peer) {
+              main.Packet.sendNothing(peer, x, y, _data.plantingTree, player.netID);
+            }, {
+              sameWorldCheck: true,
+              world: player.currentWorld,
+              peer: peerid
+            });
+
+            return;
+          } else if (worldBlock.breakLevel >= (punchedBlock.breakHits / 6) - 1) {
+            if (worldBlock.foreground > 0) {
+              // locks
+              if (main.getItems().get(worldBlock.foreground).actionType === Constants.Blocktypes.locks) {
+                main.Packet.setNickname(peerid, player.displayName);
+                world.owner = {};
+                world.isPublic = true;
+
+                player.worldsOwned = player.worldsOwned.filter(i => i !== world.name);
+
+                p.create()
+                  .string('OnConsoleMessage')
+                  .string('World lock has been removed!')
+                  .end();
+
+                main.Packet.broadcast(function(peer) {
+                  main.Packet.sendPacket(peer, p.return().data, p.return().len);
+                }, {
+                  sameWorldCheck: true,
+                  peer: peerid
+                });
+
+                p.reconstruct();
               }
 
-              return;
-            } else if (worldBlock.breakLevel >= (punchedBlock.breakHits / 6) - 1) {
-              if (worldBlock.foreground > 0)
-                worldBlock.foreground = 0;
-              else if (worldBlock.background > 0)
-                worldBlock.background = 0;
-
-              worldBlock.breakLevel = 0;
-              world.items[x + (y * world.width)] = worldBlock;
-              main.worlds.set(world.name, world);
+              worldBlock.foreground = 0;
             }
+            else if (worldBlock.background > 0)
+              worldBlock.background = 0;
+
+            worldBlock.breakLevel = 0;
+            world.items[x + (y * world.width)] = worldBlock;
+            main.worlds.set(world.name, world);
           }
-      } else {
+        }
+
+        main.worlds.set(player.currentWorld, world);
+        main.players.set(peerid, player);
+      } else if (data.plantingTree !== 18 || data.plantingTree !== 32) {
+        // PLACE BLOCKS
         let items = player.inventory.items;
         for (let i = 0; i < items.length; i++) {
           if (items[i].itemID === data.plantingTree) {
             if (items[i].itemCount > 1) {
-              items[i].itemCount -= 1;
+              items[i].itemCount--;
             } else {
               items.splice(i, 1);
             }
@@ -284,17 +324,77 @@ module.exports = function(main, packet, peerid, p) {
         player.inventory.items = items;
         let blockType = main.getItems().get(data.plantingTree).actionType;
 
-        if (blockType === 18) {
+        if (main.getItems().get(world.items[x + (y * world.width)].foreground).actionType === Constants.Blocktypes.locks)
+          return main.Packet.sendNothing(peerid, x, y);
+
+        if (blockType === Constants.Blocktypes.background) {
           world.items[x + (y * world.width)].background = data.plantingTree;
         } else {
-          if (blockType === 15 && !(Constants.Permissions.admin & player.permissions)) {
+          if (world.owner.id && world.owner.id !== player.id && !world.isPublic && player.permissions < Constants.Permissions.worldOwner) {
+            main.Packet.sendNothing(peerid, x, y, 0, -1);
+            return main.Packet.broadcast(function(peer) {
+              main.Packet.sendSound(peerid, 'audio/punch_locked.wav', 0);
+            }, {
+              sameWorldCheck: true,
+              peer: peerid
+            });
+          }
+
+          if ((blockType === 15 && !(Constants.Permissions.admin & player.permissions)) || (data.plantingTree === 202 || data.plantingTree === 204 || data.plantingTree === 206 || data.plantingTree === 4994)) {
             p.create()
               .string('OnTalkBubble')
+              .intx(player.netID)
               .string('You can\'t do that')
+              .intx(0)
               .end();
 
             main.Packet.sendPacket(peerid, p.return().data, p.return().len);
             return p.reconstruct();
+          }
+
+          if (blockType === Constants.Blocktypes.locks) {
+            // place locks
+            if (world.items.filter(i => main.getItems().get(i.foreground).actionType === Constants.Blocktypes.locks).length > 0) {
+              p.create()
+                .string('OnTalkBubble')
+                .intx(player.netID)
+                .string('You can\'t place any more locks.')
+                .intx(0)
+                .end();
+
+              main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+              return p.reconstruct();
+            }
+
+            p.create()
+              .string('OnTalkBubble')
+              .intx(player.netID)
+              .string(`\`5[\`\`\`w${world.name}\`\` has been \`$World Locked\`\` by ${player.displayName}\`5]\``)
+              .intx(0)
+              .end();
+            
+            main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+            p.reconstruct();
+
+            p.create()
+              .string('OnConsoleMessage')
+              .string(`\`5[\`\`\`w${world.name}\`\` has been \`$World Locked\`\` by ${player.displayName}\`5]\``)
+              .end();
+
+            main.Packet.broadcast(function(peer) {
+              main.Packet.sendPacket(peer, p.return().data, p.return().len);
+              main.Packet.sendSound(peer, 'audio/use_lock.wav', 0);
+            }, {
+              sameWorldCheck: true,
+              peer: peerid
+            });
+
+            p.reconstruct();
+
+            main.Packet.setNickname(peerid, `\`2${player.displayName}`);
+            player.worldsOwned.push(world.name);
+            world.owner = player;
+            player.addRole('worldOwner');
           }
 
           world.items[x + (y * world.width)].foreground = data.plantingTree;
@@ -303,15 +403,14 @@ module.exports = function(main, packet, peerid, p) {
 
       main.worlds.set(player.currentWorld, world);
       main.players.set(peerid, player);
-      main.Packet.sendInventory(peerid);
 
-      for (let peer of [...main.players.keys()]) {
-        if (!main.Host.checkIfConnected(peer))
-          continue;
-
-        if (main.Host.isInSameWorld(peerid, peer))
-          main.Packet.sendPacketRaw(peer, 4, main.Packet.packPlayerMoving(data), 56, 0);
-      }
+      main.Packet.broadcast(function(peer) {
+        main.Packet.sendPacketRaw(peer, 4, main.Packet.packPlayerMoving(data), 56, 0);
+      }, {
+        sameWorldCheck: true,
+        world: player.currentWorld,
+        peer: peerid
+      });
       break;
     }
   }

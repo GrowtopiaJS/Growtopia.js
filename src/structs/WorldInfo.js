@@ -4,7 +4,7 @@ class WorldInfo {
     this.width = 100;
     this.height = 60;
     this.isPublic = false;
-    this.owner = "";
+    this.owner = {};
     this.items = [];
     this.players = [];
     this.signs = [];

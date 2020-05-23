@@ -75,6 +75,9 @@ class Packet {
    */
 
   sendPacket(peerid, packet, length) {
+    if (!packet)
+      throw new Error('Invalid packet')
+
     return this.#main.getModule().Packets.sendPacket(peerid, packet, length || packet.length);
   }
 
@@ -182,16 +185,19 @@ class Packet {
    */
 
   sendPData(peerid, data) {
-    let peers = [...this.#main.players.keys()];
+    let player = this.#main.players.get(peerid);
 
-    for (let i = 0; i < peers.length; i++) {
-      if (this.Host.isInSameWorld(peerid, peers[i])) {
-        if (peerid !== peers[i]) {
-          data.netID = this.#main.players.get(peerid).netID;
-          this.sendPacketRaw(peers[i], 4, this.packPlayerMoving(data), 56, 0);
-        }
-      }
-    }
+    let self = this;
+
+    this.broadcast(function(peer) {
+      data.netID = player.netID;
+      self.sendPacketRaw(peer, 4, self.packPlayerMoving(data), 56, 0);
+    }, {
+      sameWorldCheck: true,
+      world: player.currentWorld,
+      peer: peerid,
+      runIfNotSame: true
+    });
   };
 
   /**
@@ -222,23 +228,31 @@ class Packet {
         .end()
         .return();
 
-      let peers = [...this.#main.players.keys()];
+      let self = this;
 
-      for (let i = 0; i < peers.length; i++) {
-        if (this.Host.isInSameWorld(peerid, peers[i])) {
-          if (this.Host.checkIfConnected(peers[i])) {
-            this.sendPacket(peers[i], p.data, p.len);
-            this.sendPacket(peers[i], p2.data, p2.len);
+      this.broadcast(function(peer) {
+        self.sendPacket(peer, p.data, p.len);
+        self.sendPacket(peer, p2.data, p2.len);
 
-            let player2 = this.#main.players.get(peers[i]);
-            if (world.owner.length > 0) {
-              if (player2.tankIDName === world.owner)
-                player2.removeRole('worldOwner');
-            }
-          }
+        let player2 = self.#main.players.get(peer);
+        if (world.owner.id) {
+          if (player2.id === world.owner.id)
+            player2.removeRole('worldOwner');
         }
-      }
+      }, {
+        sameWorldCheck: true,
+        world: world.name,
+        peer: peerid
+      });
 
+      p.reconstruct();
+
+      p.create()
+        .string('OnConsoleMessage')
+        .string(`Where would you like to go? (\`w${this.#main.players.size}\`o online)`)
+        .end();
+
+      this.sendPacket(peerid, p.return().data, p.return().len);
       p.reconstruct();
 
       player.currentWorld = "EXIT";
@@ -278,12 +292,14 @@ class Packet {
     let mempos = 80 + nameLen;
 
     for (let i = 0; i < square; i++) {
-      data.writeIntLE(world.items[i].foreground, mempos, 2);
-      data.writeIntLE(world.items[i].background, mempos + 2, 2);
+      let worldItem = world.items[i];
+
+      data.writeIntLE(worldItem.foreground, mempos, 2);
+      data.writeIntLE(worldItem.background, mempos + 2, 2);
       data.writeIntLE(0, mempos + 4, 4);
 
       mempos += 8;
-      if (world.items[i].foreground === 6) {
+      if (worldItem.foreground === 6) {
         data.writeIntLE(0x01, mempos, 1)
         data.writeIntLE(0x04, mempos + 1, 1);
         data.writeIntLE(0x00, mempos + 2, 1);
@@ -293,6 +309,13 @@ class Packet {
         data.writeIntLE(0x54, mempos + 6, 1);
         data.writeIntLE(0x00, mempos + 7, 1);
         mempos += 8;
+      } else if (this.#main.getItems().get(worldItem.foreground).actionType === Constants.Blocktypes.locks) {
+        data.writeIntLE(0x3, mempos, 1);
+        data.writeIntLE(world.owner.id || 0, mempos + 2, 4);
+        data.writeIntLE(1, mempos + 6, 1);
+        data.writeIntLE(0x1, mempos + 10, 1);
+
+        mempos += 14;
       }
     }
 
@@ -344,22 +367,30 @@ class Packet {
    */
 
   onPeerConnect(peerid) {
-    let peers = [...this.#main.players.keys()];
+    let playerInfo = this.#main.players.get(peerid);
+    let world = this.#main.worlds.get(playerInfo.currentWorld);
+    let self = this;
 
-    for (let i = 0; i < this.#main.players.size; i++) {
-      if (!this.#main.Host.checkIfConnected(peers[i]))
-        continue;
+    this.broadcast(function(peer) {
+      playerInfo = self.#main.players.get(peer);
 
-      if (this.Host.isInSameWorld(peerid, peers[i])) {
-        if (peerid !== peers[i]) {
-          let playerInfo = this.#main.players.get(peers[i]);
-          this.onSpawn(peerid, `spawn|avatar\nnetID|${playerInfo.netID}\nuserID|${playerInfo.netID}\ncolrect|0|0|20|30\nposXY|${playerInfo.x}|${playerInfo.y}\nname|\`\`${playerInfo.displayName}\`\`\ncountry|${playerInfo.country}\ninvis|0\nmstate|0\nsmstate|0\n`);
+      if (playerInfo.id === world.owner.id && !playerInfo.displayName.includes('`2'))
+        self.setNickname(peerid, `\`2${playerInfo.displayName}`);
 
-          playerInfo = this.#main.players.get(peerid);
-          this.onSpawn(peers[i], `spawn|avatar\nnetID|${playerInfo.netID}\nuserID|${playerInfo.netID}\ncolrect|0|0|20|30\nposXY|${playerInfo.x}|${playerInfo.y}\nname|\`\`${playerInfo.displayName}\`\`\ncountry|${playerInfo.country}\ninvis|0\nmstate|0\nsmstate|0\n`)
-        };
-      }
-    }
+      self.onSpawn(peerid, `spawn|avatar\nnetID|${playerInfo.netID}\nuserID|${playerInfo.id}\ncolrect|0|0|20|30\nposXY|${playerInfo.x}|${playerInfo.y}\nname|\`\`${playerInfo.displayName}\`\`\ncountry|${playerInfo.country}\ninvis|0\nmstate|0\nsmstate|0\n`);
+
+      playerInfo = self.#main.players.get(peerid);
+
+      if (playerInfo.id === world.owner.id && !playerInfo.displayName.includes('`2'))
+        self.setNickname(peerid, `\`2${playerInfo.displayName}`);
+
+      self.onSpawn(peer, `spawn|avatar\nnetID|${playerInfo.netID}\nuserID|${playerInfo.id}\ncolrect|0|0|20|30\nposXY|${playerInfo.x}|${playerInfo.y}\nname|\`\`${playerInfo.displayName}\`\`\ncountry|${playerInfo.country}\ninvis|0\nmstate|0\nsmstate|0\n`);
+    }, {
+      sameWorldCheck: true,
+      world: world.name,
+      peer: peerid,
+      runIfNotSame: true
+    });
   }
 
   /**
@@ -400,13 +431,10 @@ class Packet {
   sendState(peerid) {
     let player = this.#main.players.get(peerid);
     let netID = player.netID;
-    let peers = [...this.#main.players.keys()];
     let state = player.getState();
+    let self = this;
 
-    for (let peer of peers) {
-      if (!this.#main.Host.checkIfConnected(peer))
-        continue;
-
+    this.broadcast(function(peer) {
       let data = new PlayerMoving();
       data.packetType = 0x14;
       data.characterState = 0;
@@ -419,17 +447,23 @@ class Packet {
       data.netID = netID;
       data.plantingTree = state;
 
-      let packedData = this.packPlayerMoving(data);
-
+      let packedData = self.packPlayerMoving(data);
       let effect = Constants.ItemEffects[player.punchEffects[player.punchEffects.length - 1]];
+        
       packedData.writeUIntLE(effect, 1, 3);
       
       let waterSpeed = 125.0;
       packedData.writeFloatLE(waterSpeed, 16, 4);
 
-      this.sendPacketRaw(peer, 4, packedData, 56, 0);
-    }
+      self.sendPacketRaw(peer, 4, packedData, 56, 0);
+    });
   }
+
+  /**
+   * Sends the peer's inventory data
+   * @param {String} peerid id of the peer
+   * @returns {undefined}
+   */
 
   sendInventory(peerid) {
     let player = this.#main.players.get(peerid);
@@ -460,6 +494,12 @@ class Packet {
     p.reconstruct();
   }
 
+  /**
+   * Sends the clothes of the peer
+   * @param {String} peerid The id of the peer
+   * @returns {undefined}
+   */
+
   sendClothes(peerid) {
     let player = this.#main.players.get(peerid);
 
@@ -472,66 +512,81 @@ class Packet {
       .float(0, 0, 0)
       .end();
 
-    let peers = [...this.#main.players.keys()];
+    let self = this;
 
-    for (let peer of peers) {
-      if (!this.#main.Host.checkIfConnected(peer))
-        continue;
+    this.broadcast(function(peer) {
+      let packet = p.return().data;
 
-      if (this.#main.Host.isInSameWorld(peerid, peer)) {
-        let packet = p.return().data;
-        packet.writeIntLE(player.netID, 8, 4);
+      packet.writeIntLE(player.netID, 8, 4);
 
-        this.sendPacket(peer, packet, p.return().len);
-        this.sendSound(peer, "audio/change_clothes.wav", 0);
-      }
-    }
+      self.sendPacket(peer, packet, p.return().len);
+      self.sendSound(peer, "audio/change_clothes.wav", );
+    }, {
+      sameWorldCheck: true,
+      world: player.currentWorld,
+      peer: peerid
+    });
 
     p.reconstruct();
   }
 
+  /**
+   * Update all the peers of the current player and the other players in a world
+   * @param {String} peerid The id of the peer
+   * @returns {undefined}
+   */
+
   updateAllClothes(peerid) {
     let player = this.#main.players.get(peerid);
-    let peers = [...this.#main.players.keys()];
+    let self = this;
 
-    for (let peer of peers) {
-      if (!this.#main.Host.checkIfConnected(peer) && (peerid === peer && peers.length > 1))
-        continue;
+    this.broadcast(function(peer) {
+      p.create()
+        .string('OnSetClothing')
+        .float(player.clothes.hair, player.clothes.shirt, player.clothes.pants)
+        .float(player.clothes.feet, player.clothes.face, player.clothes.hand)
+        .float(player.clothes.back, player.clothes.mask, player.clothes.necklace)
+        .intx(player.skinColor)
+        .float(0, 0, 0)
+        .end();
 
-      if (this.#main.Host.isInSameWorld(peerid, peer)) {
-        p.create()
-          .string('OnSetClothing')
-          .float(player.clothes.hair, player.clothes.shirt, player.clothes.pants)
-          .float(player.clothes.feet, player.clothes.face, player.clothes.hand)
-          .float(player.clothes.back, player.clothes.mask, player.clothes.necklace)
-          .intx(player.skinColor)
-          .float(0, 0, 0)
-          .end();
+      let packet = p.return().data;
+      let currentPlayer = self.#main.players.get(peer);
+      packet.writeIntLE(player.netID, 8, 4);
 
-        let packet = p.return().data;
-        let currentPlayer = this.#main.players.get(peer);
-        packet.writeIntLE(player.netID, 8, 4);
+      self.sendPacket(peer, packet, p.return().len);
+      p.reconstruct();
 
-        this.sendPacket(peer, packet, p.return().len);
-        p.reconstruct();
+      p.create()
+        .string('OnSetClothing')
+        .float(currentPlayer.clothes.hair, currentPlayer.clothes.shirt, currentPlayer.clothes.pants)
+        .float(currentPlayer.clothes.feet, currentPlayer.clothes.face, currentPlayer.clothes.hand)
+        .float(currentPlayer.clothes.back, currentPlayer.clothes.mask, currentPlayer.clothes.necklace)
+        .intx(currentPlayer.skinColor)
+        .float(0, 0, 0)
+        .end();
 
-        p.create()
-          .string('OnSetClothing')
-          .float(currentPlayer.clothes.hair, currentPlayer.clothes.shirt, currentPlayer.clothes.pants)
-          .float(currentPlayer.clothes.feet, currentPlayer.clothes.face, currentPlayer.clothes.hand)
-          .float(currentPlayer.clothes.back, currentPlayer.clothes.mask, currentPlayer.clothes.necklace)
-          .intx(currentPlayer.skinColor)
-          .float(0, 0, 0)
-          .end();
+      let packet2 = p.return().data;
+      packet2.writeIntLE(currentPlayer.netID, 8, 4);
 
-        let packet2 = p.return().data;
-        packet2.writeIntLE(currentPlayer.netID, 8, 4);
-
-        this.sendPacket(peerid, packet2, p.return().len);
-        p.reconstruct();
-      }
-    }
+      self.sendPacket(peerid, packet2, p.return().len);
+      p.reconstruct();
+    }, {
+      sameWorldCheck: true,
+      world: player.currentWorld,
+      peer: peerid
+    });
   }
+
+  /**
+   * Sends nothing to the server, can be used for breaking blocks.
+   * @param {String} peerid The peer id that requested this
+   * @param {Number} x X location
+   * @param {Number} y Y location
+   * @param {Number} plantingTree The block 
+   * @param {Number} [netID=-1] The netID
+   * @returns {undefined}
+   */
 
   sendNothing(peerid, x, y, plantingTree, netID) {
     if (typeof netID !== 'number')
@@ -549,7 +604,15 @@ class Packet {
     this.sendPacketRaw(peerid, 4, this.packPlayerMoving(data), 56, 0);
   }
 
-  sendSound(peer, file, delay) {
+  /**
+   * Sends sound to the peer
+   * @param {String} peerid The id of the peer
+   * @param {String} file The file to play
+   * @param {Number} delay The delay in ms
+   * @returns {undefined}
+   */
+
+  sendSound(peerid, file, delay) {
     let string = `action|play_sfx\nfile|${file}\ndelayMS|${delay}`;
     let data = Buffer.alloc(5 + string.length);
 
@@ -557,23 +620,65 @@ class Packet {
     data.write(string, 4, string.length);
     data.writeIntLE(0, string.length + 4, 1);
 
-    this.sendPacket(peer, data, data.length);
+    this.sendPacket(peerid, data, data.length);
   }
+
+  /**
+   * Sets the nickname of the player in a world.
+   * @param {String} peerid The id of the peer
+   * @param {String} nickname The new nickname to give
+   * @returns {undefined}
+   */
 
   setNickname(peerid, nickname) {
     let player = this.#main.players.get(peerid);
+    let self = this;
+
+    this.broadcast(function(peer) {
+      let p2 = p.create()
+        .string('OnNameChanged')
+        .string(`\`\`\`0${nickname}`)
+        .end()
+        .return();
+      
+      p2.data.writeIntLE(player.netID, 8, 4);
+      self.sendPacket(peer, p2.data, p2.len);
+      p.reconstruct();
+    }, {
+      sameWorldCheck: true,
+      world: player.currentWorld,
+      peer: peerid
+    });
+
+    this.#main.players.set(peerid, player);
+  }
+
+  broadcast(callback, options = {}) {
+    if (!options.currentPeer) options.currentPeer = {};
+
+    if (options.sameWorldCheck && !options.peer)
+      throw new Error('options.sameWorldCheck was enabled but no peer was given.');
+
+    if ((options.runIfSame || options.runIfNotSame) && !options.peer)
+      throw new Error('Using options.runIfSame or options.runIfNotSame required a peer.');
+
+    if (options.runIfSame && options.runIfNotSame)
+      throw new Error('options.runIfSame and options.runIfNotSame can\'t be true at the same time.');
 
     for (let peer of [...this.#main.players.keys()]) {
-      if (this.#main.Host.isInSameWorld(peerid, peer) && this.#main.Host.checkIfConnected(peer)) {
-        let p2 = p.create()
-          .string('OnNameChanged')
-          .string(nickname)
-          .end()
-          .return();
-        p2.data.writeIntLE(player.netID, 8, 4);
-        this.sendPacket(peer, p2.data, p2.len);
-        p.reconstruct();
-      }
+      if (!this.#main.Host.checkIfConnected(peer)) continue;
+
+      if (options.runFunctionFirst)
+        callback(peer);
+
+      if (options.sameWorldCheck)
+        if (!this.#main.Host.isInSameWorld(options.peer, peer)) continue;
+
+      if (options.runIfSame && options.peer !== peer) continue;
+      if (options.runIfNotSame && options.peer === peer) continue;
+
+      if (!options.runFunctionFirst)
+        callback(peer);
     }
   }
 };

@@ -23,6 +23,16 @@ module.exports = {
     obj.itemID = parseInt(item);
     obj.itemCount = parseInt(amount);
 
+    if (!main.getItems().has(obj.itemID)) {
+      p.create()
+        .string('OnConsoleMessage')
+        .string(`Can't find an item with id \`w${item}\`\``)
+        .end();
+
+      main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+      return p.reconstruct();
+    }
+
     if (inv.items.filter(i => i.itemID === obj.itemID).length < 1)
       inv.items.push(obj);
     else {
@@ -33,6 +43,17 @@ module.exports = {
       obj.itemCount = count > 200 ? 200 : count;
       inv.items[index].itemCount = obj.itemCount;
     }
+
+    p.create()
+      .string('OnConsoleMessage')
+      .string(`Added \`w${main.getItems().get(obj.itemID).name}\`\` to your inventory.`)
+      .end();
+
+    main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+    p.reconstruct();
+
+    player.inventory = inv;
+    main.players.set(peerid, player);
 
     main.Packet.sendInventory(peerid);
   }

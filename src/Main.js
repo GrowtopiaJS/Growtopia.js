@@ -10,6 +10,7 @@ let p = new PacketCreator();
 let netID = 0;
 let items = new Map();
 let Enmap;
+let lastUID = 0;
 
 try {
   Enmap = require('enmap');
@@ -210,15 +211,43 @@ class Main extends EventEmitter {
 
       disconnects: {
         value: new Map()
+      },
+
+      /**
+       * @prop {String[]} mods An array of mods. Add a tankIDName here so that upon server start, that account would become mod. This is not a list of mods btw.
+       */
+
+      mods: {
+        value: Array.isArray(options.mods) ? options.mods : []
+      },
+
+      /**
+       * @prop {String[]} admins An array of admins. Add a tankIDName here so that upon server start, that account would become admin. This is not a list of mods btw.
+       */
+
+      admins: {
+        value: Array.isArray(options.admins) ? options.admins : []
       }
     });
 
     this.netID = netID;
+    this.lastID = 0;
     this.#loadCommands();
     this.#loadWorldsToCache();
 
     if (this.autoWeb)
       this.#startWebserver();
+
+    // get last id
+    let players = [];
+
+    for (let [k, v] of this.playersDB) {
+      players.push(v);
+    }
+
+    players = players.sort((a, b) => b.id - a.id)
+    .map(i => i.id);
+    this.lastID = players[players.length - 1] || 0;
   }
 
   /**

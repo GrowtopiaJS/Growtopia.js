@@ -3,26 +3,7 @@ const InventoryItem = require('../structs/InventoryItem');
 
 module.exports = function(main, packet, peerid, p) {
   main.Packet.requestWorldSelect(peerid);
-
   let player = main.players.get(peerid);
-  let peers = [...main.players.keys()];
-  let staff = 0;
-
-  peers.forEach((peerx)=>{
-  peerx = main.players.get(peerx)
-  if (~peerx.displayName.indexOf("@"))
-    staff += 1;
-  })
-
-  let string = `\`oThere ${peers.length > 1 ? 'are' : 'is'} \`w${peers.length}\`o player${peers.length > 1 ? 's' : ''} online. \`w${staff}\`o of them ${staff > 1 ? 'are' : 'is'} a staff member.`;
-
-  p.create()
-    .string('OnConsoleMessage')
-    .string(string)
-    .end();
-
-  main.Packet.sendPacket(peerid, p.return().data, p.return().len);
-  p.reconstruct();
 
   let welcomedialog = main.Dialog
     .defaultColor()

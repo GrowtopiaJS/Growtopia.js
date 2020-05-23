@@ -1,12 +1,12 @@
 const PlayerInventory = require('./PlayerInventory');
 const Constants = require('./Constants');
 const PacketCreator = require('../PacketCreator');
-let p = new PacketCreator();
 
 class PlayerInfo {
 	#main;
 	constructor(main) {
 		this.#main = main;
+		this.id = 0;
 		this.netID = 0;
 		this.tankIDName = "";
 		this.tankIDPass = "";
@@ -52,6 +52,7 @@ class PlayerInfo {
 
 		this.states = [];
 		this.punchEffects = ["Fist"];
+		this.worldsOwned = [];
 	}
 
 	addState(state) {
@@ -91,6 +92,8 @@ class PlayerInfo {
 	}
 
 	addRole(role) {
+		if (this.roles.includes(role)) return;
+
 		let perm = Constants.Permissions[role];
 
 		if (perm) {
@@ -102,6 +105,7 @@ class PlayerInfo {
 	}
 
 	removeRole(role) {
+		if (this.roles.includes(role)) return;
 		let perm = Constants.Permissions[role];
 
 		if (perm) {

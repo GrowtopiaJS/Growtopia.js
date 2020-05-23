@@ -59,6 +59,13 @@ class Dialog {
     return this;
   }
 
+  /**
+   * Embeds value to the dialog.
+   * @param {String} key The key of the value to embed
+   * @param {String} val The value of that key.
+   * @returns {Dialog}
+   */
+
   embed(key, val) {
     this.#str += `embed_data|${key}|${val}\n`;
     return this;

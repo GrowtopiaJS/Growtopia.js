@@ -1,6 +1,7 @@
 module.exports = function(main, packet, peerid, p) {
   let text = packet.get('text');
   let player = main.players.get(peerid);
+  let world = main.worlds.get(player.currentWorld);
 
   if (text.trim().length > 0) {
     let msg = "";
@@ -39,10 +40,14 @@ module.exports = function(main, packet, peerid, p) {
     msg += text;
     msg = msg.trim().split(/ +/g).join(' ');
 
+    let name = player.displayName;
+    if (world.owner.id === player.id)
+      name = `\`2${name}`;
+
     p.create()
       .create()
       .string('OnConsoleMessage')
-      .string(`CP:0_PL:4_OID:_CT:[W]_ \`6<\`w${player.displayName}\`6> \`o${msg}`)
+      .string(`CP:0_PL:4_OID:_CT:[W]_ \`6<\`w${name}\`6> \`o${msg}`)
       .end();
 
     let p2 = p.new()
@@ -54,17 +59,15 @@ module.exports = function(main, packet, peerid, p) {
       .end()
       .return();
 
-    let peers = [...main.players.keys()];
-
-    for (let i = 0; i < peers.length; i++) {
-      if (main.Host.isInSameWorld(peerid, peers[i])) {
-        if (main.Host.checkIfConnected(peers[i])) {
-          main.Packet.sendPacket(peers[i], p.return().data, p.return().len);
-          main.Packet.sendPacket(peers[i], p2.data, p2.len);
-        }
-      }
-    }
-
+    main.Packet.broadcast(function(peer) {
+      main.Packet.sendPacket(peer, p.return().data, p.return().len);
+      main.Packet.sendPacket(peer, p2.data, p2.len);
+    }, {
+      sameWorldCheck: true,
+      world: player.currentWorld,
+      peer: peerid
+    });
+    
     p.reconstruct();
   }
 };

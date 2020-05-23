@@ -5,4 +5,4 @@ module.exports = {
 	PacketCreator: require('./src/PacketCreator'),
 	Dialog: require('./src/Dialog'),
 	Constants: require('./src/structs/Constants')
-}
+};
