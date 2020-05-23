@@ -309,6 +309,9 @@ module.exports = function(main, packet, peerid, p) {
         main.worlds.set(player.currentWorld, world);
         main.players.set(peerid, player);
       } else if (data.plantingTree !== 18 || data.plantingTree !== 32) {
+        if (world.items[x + (y * world.width)].foreground > 0 || world.items[x + (y * world.width)].foreground > 0)
+          return main.Packet.sendNothing(peerid, x, y);
+
         // PLACE BLOCKS
         let items = player.inventory.items;
         for (let i = 0; i < items.length; i++) {
@@ -323,9 +326,6 @@ module.exports = function(main, packet, peerid, p) {
 
         player.inventory.items = items;
         let blockType = main.getItems().get(data.plantingTree).actionType;
-
-        if (main.getItems().get(world.items[x + (y * world.width)].foreground).actionType === Constants.Blocktypes.locks)
-          return main.Packet.sendNothing(peerid, x, y);
 
         if (blockType === Constants.Blocktypes.background) {
           world.items[x + (y * world.width)].background = data.plantingTree;
