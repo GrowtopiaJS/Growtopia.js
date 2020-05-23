@@ -169,7 +169,7 @@ module.exports = {
 
         main.netID++;
         player.netID = main.netID;
-        player.displayName = player.tankIDName || `${peerid}_${player.requestedName}`;
+        player.displayName = player.registeredName || `${peerid}_${player.requestedName}`;
         player.properName = player.tankIDName || player.requestedName;
         player.rawName = player.properName.toLowerCase();
         player.isGuest = !player.tankIDName && player.requestedName ? true : false;

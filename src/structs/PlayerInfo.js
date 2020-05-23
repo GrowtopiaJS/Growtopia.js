@@ -16,6 +16,7 @@ class PlayerInfo {
 		this.properName = "";
 		this.country = "";
 		this.email = "";
+		this.registeredName = "";
 		this.currentWorld = "EXIT";
 		this.x = 0;
 		this.y = 0;

@@ -70,6 +70,7 @@ module.exports = function(main, packet, peerid, p) {
       newPlayer.states = [];
       newPlayer.temp = {};
       newPlayer.isGuest = false;
+      newPlayer.registeredName = username;
 
       main.playersDB.set(newPlayer.rawName, newPlayer);
       p.create()
