@@ -103,7 +103,6 @@ class Packet {
 
   GetStructPointerFromTankPacket(packet) {
     let p = Buffer.from(packet);
-
     let result;
 
     if (p.length >= 0x3C)

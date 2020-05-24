@@ -229,22 +229,21 @@ module.exports = {
 
               p.create()
                 .string('OnConsoleMessage')
-                .string('Someone is already logged in on your account. Kicking it so you can log on.')
-                .end();
-
-              main.Packet.sendPacket(peerid, p.return().data, p.return().len);
-              p.reconstruct();
-
-              p.create()
-                .string('OnConsoleMessage')
-                .string('Kicking you out as somebody is trying to login')
+                .string('Someone is trying to login. Kicking you out.')
                 .end();
 
               main.Packet.sendPacket(peer, p.return().data, p.return().len);
               p.reconstruct();
 
+              p.create()
+                .string('OnConsoleMessage')
+                .string('Someone is already logged in with this account. Kicking it out.')
+                .end();
+
+              main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+
               fromDiscon = true;
-              main.Packet.sendPlayerLeave(peer);
+              //main.Packet.sendPlayerLeave(peer);
               main.Packet.sendQuit(peer);
 
               main.disconnects.set(peer, currentPlayer);
@@ -255,18 +254,19 @@ module.exports = {
 
         main.players.set(peerid, player);
 
-        p.create()
-          .string('OnSuperMainStartAcceptLogonHrdxs47254722215a')
-          .int(main.itemsDatHash)
-          .string('ubistatic-a.akamaihd.net')
-          .string(main.cdn)
-          .string('cc.cz.madkite.freedom org.aqua.gg idv.aqua.bulldog com.cih.gamecih2 com.cih.gamecih com.cih.game_cih cn.maocai.gamekiller com.gmd.speedtime org.dax.attack com.x0.strai.frep com.x0.strai.free org.cheatengine.cegui org.sbtools.gamehack com.skgames.traffikrider org.sbtoods.gamehaca com.skype.ralder org.cheatengine.cegui.xx.multi1458919170111 com.prohiro.macro me.autotouch.autotouch com.cygery.repetitouch.free com.cygery.repetitouch.pro com.proziro.zacro com.slash.gamebuster')
-          .string('proto=84|choosemusic=audio/mp3/about_theme.mp3|active_holiday=0|server_tick=226933875|clash_active=0|drop_lavacheck_faster=1|isPayingUser=0|')
-          .end();
-
         if (fromDiscon) {
           setTimeout(() => {
             let player = main.players.get(peerid);
+
+            p.create()
+              .string('OnSuperMainStartAcceptLogonHrdxs47254722215a')
+              .int(main.itemsDatHash)
+              .string('ubistatic-a.akamaihd.net')
+              .string(main.cdn)
+              .string('cc.cz.madkite.freedom org.aqua.gg idv.aqua.bulldog com.cih.gamecih2 com.cih.gamecih com.cih.game_cih cn.maocai.gamekiller com.gmd.speedtime org.dax.attack com.x0.strai.frep com.x0.strai.free org.cheatengine.cegui org.sbtools.gamehack com.skgames.traffikrider org.sbtoods.gamehaca com.skype.ralder org.cheatengine.cegui.xx.multi1458919170111 com.prohiro.macro me.autotouch.autotouch com.cygery.repetitouch.free com.cygery.repetitouch.pro com.proziro.zacro com.slash.gamebuster')
+              .string('proto=84|choosemusic=audio/mp3/about_theme.mp3|active_holiday=0|server_tick=226933875|clash_active=0|drop_lavacheck_faster=1|isPayingUser=0|')
+              .end();
+
             for (let [oldPeer, oldPlayer] of main.disconnects) {
               if (player && oldPlayer.tankIDName === player.tankIDName) {
 
@@ -279,11 +279,25 @@ module.exports = {
                 main.disconnects.delete(oldPeer)
               } else continue;
             }
-            main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+            
+            if (main.Host.checkIfConnected(peerid))
+              main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+
             p.reconstruct();
           }, 1500);
         } else {
-          main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+          p.create()
+            .string('OnSuperMainStartAcceptLogonHrdxs47254722215a')
+            .int(main.itemsDatHash)
+            .string('ubistatic-a.akamaihd.net')
+            .string(main.cdn)
+            .string('cc.cz.madkite.freedom org.aqua.gg idv.aqua.bulldog com.cih.gamecih2 com.cih.gamecih com.cih.game_cih cn.maocai.gamekiller com.gmd.speedtime org.dax.attack com.x0.strai.frep com.x0.strai.free org.cheatengine.cegui org.sbtools.gamehack com.skgames.traffikrider org.sbtoods.gamehaca com.skype.ralder org.cheatengine.cegui.xx.multi1458919170111 com.prohiro.macro me.autotouch.autotouch com.cygery.repetitouch.free com.cygery.repetitouch.pro com.proziro.zacro com.slash.gamebuster')
+            .string('proto=84|choosemusic=audio/mp3/about_theme.mp3|active_holiday=0|server_tick=226933875|clash_active=0|drop_lavacheck_faster=1|isPayingUser=0|')
+            .end();
+
+          if (main.Host.checkIfConnected(peerid))
+            main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+
           p.reconstruct();
         }
       }

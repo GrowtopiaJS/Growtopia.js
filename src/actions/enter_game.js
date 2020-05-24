@@ -5,6 +5,8 @@ module.exports = function(main, packet, peerid, p) {
   main.Packet.requestWorldSelect(peerid);
   let player = main.players.get(peerid);
 
+  if (!player) return;
+
   let welcomedialog = main.Dialog
     .defaultColor()
     .addLabelWithIcon("Welcome to Growtopia.js!``","5016","big")
