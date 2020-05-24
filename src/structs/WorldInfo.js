@@ -10,6 +10,7 @@ class WorldInfo {
     this.signs = [];
     this.bannedPlayers = [];
     this.bannedGuests = [];
+    this.weather = "";
   }
 };
 

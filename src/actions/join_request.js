@@ -19,12 +19,13 @@ module.exports = function(main, packet, peerid, p) {
     return p.reconstruct();
   }
 
-  let player;
+  let player = main.players.get(peerid);
   let name = packet.get('name').toUpperCase();
   let world = main.worlds.get(name);
 
+  if (!player) return; // someone sends join_request before connecting
+
   if (world) {
-    player = main.players.get(peerid);
     player.currentWorld = name;
 
     world.players.push(player);
@@ -36,7 +37,6 @@ module.exports = function(main, packet, peerid, p) {
   } else {
     world = main.generateWorld(name, 100, 60);
 
-    player = main.players.get(peerid);
     player.currentWorld = world.name
 
     main.players.set(peerid, player);
@@ -61,9 +61,13 @@ module.exports = function(main, packet, peerid, p) {
   player.y = Math.floor(y);
 
   main.players.set(peerid, player);
-
-  if (player.id === world.owner.id)
+  
+  if (player.id === world.owner.id) {
     player.addRole('worldOwner');
+    world.owner = player;
+  } else player.removeRole('worldOwner');
+
+  main.worlds.set(world.name, world); 
 
   p.create()
     .string('OnSpawn')
@@ -85,12 +89,10 @@ module.exports = function(main, packet, peerid, p) {
   main.Packet.sendPacket(peerid, p.return().data, p.return().len);
   p.reconstruct();
 
-
-
   if (world.owner.id) {
     p.create()
       .string('OnConsoleMessage')
-      .string(`\`5[\`\`\`w${world.name}\`\` \`$World Locked\`\` by ${world.owner.displayName} (${player.permissions >= Constants.Permissions.worldOwner ? '`2ACCESS GRANTED``' : '`4ACCESS DENIED``'})\`5]\`\``)
+      .string(`\`5[\`\`\`w${world.name}\`\` \`$World Locked\`\` by ${world.owner.displayName} \`o(${player.permissions >= Constants.Permissions.worldOwner ? '`2ACCESS GRANTED``' : '`4ACCESS DENIED``'}\`o)\`5]\`\``)
       .end();
 
     main.Packet.sendPacket(peerid, p.return().data, p.return().len);

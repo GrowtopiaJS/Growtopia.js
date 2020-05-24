@@ -1,6 +1,5 @@
 const PlayerInventory = require('./PlayerInventory');
 const Constants = require('./Constants');
-const PacketCreator = require('../PacketCreator');
 
 class PlayerInfo {
 	#main;
@@ -106,7 +105,7 @@ class PlayerInfo {
 	}
 
 	removeRole(role) {
-		if (this.roles.includes(role)) return;
+		if (!this.roles.includes(role)) return;
 		let perm = Constants.Permissions[role];
 
 		if (perm) {

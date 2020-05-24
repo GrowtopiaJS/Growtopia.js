@@ -115,6 +115,7 @@ class Host extends EventEmitter {
   checkExit() {
     process.on('SIGINT', () => {
       listening = false;
+      this.#main.webServer.kill();
       console.log('Saving Players to Database...');
       for (let [peerid, player] of this.#main.players) {
         player.temp.peerid = "";

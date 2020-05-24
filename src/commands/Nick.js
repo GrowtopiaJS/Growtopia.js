@@ -18,7 +18,7 @@ module.exports = {
     }
 
     if (nick.length < 1) {
-      nick = player.isGuest ? `${peerid}_${player.properName}` : player.properName;
+      nick = player.isGuest ? `${peerid}_${player.requestedName}` : player.registeredName;
 
       let isMod = player.permissions & Constants.Permissions.mod;
       let isAdmin = player.permissions & Constants.Permissions.admin;

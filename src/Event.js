@@ -209,15 +209,15 @@ module.exports = {
           }
         }
 
-        if (main.mods.includes(player.tankIDName) && !player.roles.includes('mod')) player.addRole('mod');
-        if (main.admins.includes(player.tankIDName) && !player.roles.includes('admin')) player.addRole('admin');
+        if (main.mods.map(i => i.toLowerCase()).includes(player.tankIDName.toLowerCase()) && !player.roles.includes('mod')) player.addRole('mod');
+        if (main.admins.map(i => i.toLowerCase()).includes(player.tankIDName.toLowerCase()) && !player.roles.includes('admin')) player.addRole('admin');
 
         let isMod = player.permissions & Constants.Permissions.mod || player.roles.includes('mod');
         let isAdmin = player.permissions & Constants.Permissions.admin || player.roles.includes('admin');
 
-        if (isMod > 0 && isAdmin === 0)
+        if (isMod > 0 && !isAdmin)
            player.displayName = '`#@' + player.displayName;
-        else if (isAdmin > 0)
+        else if (isAdmin && isAdmin > 0)
           player.displayName = '`6@' + player.displayName;
 
         for (let [peer, currentPlayer] of main.players) {
@@ -225,7 +225,7 @@ module.exports = {
             if (currentPlayer.temp.peerid === player.temp.peerid)
               continue;
 
-            if (player.tankIDName && player.tankIDName === currentPlayer.tankIDName || (player.isGuest && currentPlayer.isGuest && player.mac === currentPlayer.mac)) {
+            if (player.tankIDName && player.tankIDName.toLowerCase() === currentPlayer.tankIDName.toLowerCase() || (player.isGuest && currentPlayer.isGuest && player.mac === currentPlayer.mac)) {
 
               p.create()
                 .string('OnConsoleMessage')
@@ -268,7 +268,7 @@ module.exports = {
           setTimeout(() => {
             let player = main.players.get(peerid);
             for (let [oldPeer, oldPlayer] of main.disconnects) {
-              if (oldPlayer.tankIDName === player.tankIDName) {
+              if (player && oldPlayer.tankIDName === player.tankIDName) {
 
                 oldPlayer.netID = player.netID;
                 oldPlayer.temp.peerid = peerid;

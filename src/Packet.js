@@ -50,20 +50,20 @@ class Packet {
    */
 
   sendQuit(peerid, saveItems = false) {
-      if (saveItems) {
-        let player = this.#main.players.get(peerid);
+    if (saveItems) {
+      let player = this.#main.players.get(peerid);
 
-        if (player) {
-          player.hasClothesUpdated = false;
-          this.#main.playersDB.set(player.rawName, player);
-          this.#main.players.delete(peerid);
+      if (player) {
+        player.hasClothesUpdated = false;
+        this.#main.playersDB.set(player.rawName, player);
+        this.#main.players.delete(peerid);
 
-          if (this.#main.Host.checkIfConnected(peerid))
-            return this.#main.getModule().Packets.quit(peerid);
-        }
+        if (this.#main.Host.checkIfConnected(peerid))
+          return this.#main.getModule().Packets.quit(peerid);
       }
+    }
 
-      return this.#main.getModule().Packets.quit(peerid);
+    return this.#main.getModule().Packets.quit(peerid);
   }
 
   /**
@@ -236,12 +236,12 @@ class Packet {
 
         let player2 = self.#main.players.get(peer);
         if (world.owner.id) {
-          if (player2.id === world.owner.id)
+          if (player2.id === world.owner.id || player2.roles.includes('worldOwner'))
             player2.removeRole('worldOwner');
         }
       }, {
         sameWorldCheck: true,
-        world: world.name,
+        world: world ? world.name : 'EXIT',
         peer: peerid
       });
 

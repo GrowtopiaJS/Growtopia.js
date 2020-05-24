@@ -54,6 +54,18 @@ class Main extends EventEmitter {
     }
   }
 
+  #loadTanks = function() {
+    let files = readdirSync(`${__dirname}/tanks`)
+      .filter(file => statSync(`${__dirname}/tanks/${file}`).isFile() && file.endsWith('.js'));
+
+    for (let i = 0; i < files.length; i++) {
+      let file = require(`${__dirname}/tanks/${files[i]}`);
+      this.tanks.set(files[i].split('.js')[0], file);
+  
+      console.log(`Loaded ${files[i].split('.js')[0]} tank packet.`);
+    }
+  }
+
   #loadWorldsToCache = function() {
     for (let [name, world] of this.worldsDB) {
       world.breakLevel = 0;
@@ -62,7 +74,7 @@ class Main extends EventEmitter {
   }
 
   #startWebserver = function() {
-    exec('node web.js', function(error, out, input) {
+    this.webServer = exec('node web.js', function(error, out, input) {
       if (error) 
         throw new Error(error);
     });
@@ -227,6 +239,18 @@ class Main extends EventEmitter {
 
       admins: {
         value: Array.isArray(options.admins) ? options.admins : []
+      },
+
+      /**
+       * @prop {Map<Object>} tanks A map that contains all tank packet files
+       */
+      tanks: {
+        value: new Map()
+      },
+
+      webServer: {
+        value: {},
+        writable: true
       }
     });
 
@@ -234,6 +258,7 @@ class Main extends EventEmitter {
     this.lastID = 0;
     this.#loadCommands();
     this.#loadWorldsToCache();
+    this.#loadTanks();
 
     if (this.autoWeb)
       this.#startWebserver();
