@@ -8,7 +8,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
 
   player.temp.MovementCount++;
   if (player.temp.MovementCount < 2) {
-    if (world.owner.id === player.id)
+    if (world && world.owner.id === player.id)
       main.Packet.setNickname(peerid, `\`2${player.displayName}`);
 
     main.Packet.broadcast(function(peer) {
