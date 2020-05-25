@@ -23,6 +23,8 @@ module.exports = {
     obj.itemID = parseInt(item);
     obj.itemCount = parseInt(amount);
 
+    if (obj.itemCount > 200) obj.itemCount = 200;
+
     if (!main.getItems().has(obj.itemID)) {
       p.create()
         .string('OnConsoleMessage')
@@ -55,6 +57,7 @@ module.exports = {
     player.inventory = inv;
     main.players.set(peerid, player);
 
+    main.Packet.sendClothes(peerid, true);
     main.Packet.sendInventory(peerid);
   }
 };

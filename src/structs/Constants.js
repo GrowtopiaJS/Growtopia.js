@@ -66,6 +66,7 @@ module.exports = {
     'Black Crystal Dragon': 0x808020,
     'Ice Dragon Hand': 0x80800B,
     'Atomic Shadow Scythe': 0x80800D,
+    'Legendary Katana': 0x80802b,
     'Tiny Tank': 0x808022,
     'Crystal Glaive': 0x808023,
     'Heartbreaker Hammer': 0x808025,

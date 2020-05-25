@@ -90,8 +90,6 @@ class Main extends EventEmitter {
       console.log('gtps.node can\'t be found. Will build the C++ Module.\nBuilding...');
 
       execSync(`node-gyp rebuild -j 8 --directory=lib`);
-      console.log('Done building! Will close process.');
-
       process.exit(0);
     };
 

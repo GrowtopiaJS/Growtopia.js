@@ -57,6 +57,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
         .intx(player.netID)
         .string('It\'s too strong to break')
         .intx(0)
+        .intx(1)
         .end();
 
       main.Packet.sendPacket(peerid, p.return().data, p.return().len);
@@ -133,6 +134,28 @@ module.exports = function(main, packet, peerid, p, type, data) {
     if (worldBlock.foreground > 0 || worldBlock.foreground > 0)
       return main.Packet.sendNothing(peerid, x, y);
 
+    // this fixes the issue that placing blocks on locked places still removes from inventory
+    if (world.owner.id && world.owner.id !== player.id && !world.isPublic && player.permissions < Constants.Permissions.worldOwner) {
+      main.Packet.sendNothing(peerid, x, y, 0, -1);
+      main.Packet.broadcast(function(peer) {
+        main.Packet.sendSound(peerid, 'audio/punch_locked.wav', 0);
+      }, {
+        sameWorldCheck: true,
+        peer: peerid
+      });
+
+      p.create()
+        .string('OnTalkBubble')
+        .intx(player.netID)
+        .string(`That area is owned by \`\`\`w${world.owner.displayName}`)
+        .intx(0)
+        .intx(1)
+        .end();
+
+      main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+      return p.reconstruct();
+    }
+
     // PLACE BLOCKS
     let items = player.inventory.items;
     for (let i = 0; i < items.length; i++) {
@@ -151,22 +174,13 @@ module.exports = function(main, packet, peerid, p, type, data) {
     if (blockType === Constants.Blocktypes.background) {
       worldBlock.background = data.plantingTree;
     } else {
-      if (world.owner.id && world.owner.id !== player.id && !world.isPublic && player.permissions < Constants.Permissions.worldOwner) {
-        main.Packet.sendNothing(peerid, x, y, 0, -1);
-        return main.Packet.broadcast(function(peer) {
-          main.Packet.sendSound(peerid, 'audio/punch_locked.wav', 0);
-        }, {
-          sameWorldCheck: true,
-          peer: peerid
-        });
-      }
-
       if ((blockType === 15 && !(Constants.Permissions.admin & player.permissions)) || (data.plantingTree === 202 || data.plantingTree === 204 || data.plantingTree === 206 || data.plantingTree === 4994)) {
         p.create()
           .string('OnTalkBubble')
           .intx(player.netID)
           .string('You can\'t do that')
           .intx(0)
+          .intx(1)
           .end();
 
         main.Packet.sendPacket(peerid, p.return().data, p.return().len);
@@ -181,6 +195,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
             .intx(player.netID)
             .string('You can\'t place any more locks.')
             .intx(0)
+            .intx(1)
             .end();
 
           main.Packet.sendPacket(peerid, p.return().data, p.return().len);
@@ -192,6 +207,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
           .intx(player.netID)
           .string(`\`5[\`\`\`w${world.name}\`\` has been \`$World Locked\`\` by ${player.displayName}\`5]\``)
           .intx(0)
+          .intx(1)
           .end();
 
         main.Packet.sendPacket(peerid, p.return().data, p.return().len);

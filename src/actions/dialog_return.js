@@ -101,6 +101,62 @@ module.exports = function(main, packet, peerid, p) {
       break;
     }
 
+    case 'trash_item': {
+      let player = main.players.get(peerid);
+      let itemID = parseInt(packet.get('itemID'));
+      let count = parseInt(packet.get('count'));
+      let itemData = player.inventory.items.filter(i => i.itemID === itemID)[0];
+
+      if (!itemData) return;
+
+      if (count > itemData.itemCount) // just remove it
+        player.inventory.items = player.inventory.items.filter(i => i.itemID !== itemID);
+
+      if (count <= itemData.itemCount) {
+        itemData.itemCount -= count;
+
+        for (let i = 0; i < player.inventory.items.length; i++) {
+          if (player.inventory.items[i].itemID === itemID)
+            player.inventory.items[i].itemCount = itemData.itemCount;
+        }
+      }
+
+      main.Packet.sendSound(peerid, "audio/trash.wav", 0);
+      main.players.set(peerid, player);
+      main.Packet.sendInventory(peerid);
+
+      // remove from clothes if wearing and effect
+      let trashedItem = player.inventory.items.filter(i => i.itemID === itemID)[0];
+      let clothes = Object.entries(player.clothes);
+      let item = main.getItems().get(itemID);
+
+      if (!trashedItem) return;
+
+      for (let i = 0; i < clothes.length; i++) {
+        if (clothes[i][1] !== trashedItem.itemID || trashedItem.itemCount + 1 > 1) continue; // +1 because we already removed it from inventory
+
+        if (trashedItem.itemID === 1904) // the one ring
+          player.removeState('isInvis');
+
+        if (Constants.wings.includes(trashedItem.itemID))
+          player.removeState('canDoubleJump');
+
+        if (Constants.ItemEffects[item.name] && player.punchEffects.includes(item.name))
+          player.removePunchEffect(item.name);
+
+        player.clothes[clothes[i][0]] = 0;
+      }
+
+      main.players.set(peerid, player);
+      main.Packet.sendState(peerid);
+      
+      if (trashedItem.itemCount < 1)
+        main.Packet.sendClothes(peerid);
+      else main.Packet.sendClothes(peerid, true);
+
+      break;
+    }
+
     default: {
       console.log(`Unhandled dialog: ${type}`);
       break;

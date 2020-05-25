@@ -17,12 +17,14 @@ class Packet {
   /**
    * Sends strings to peer
    * @param {String} peerid The id of the peer
-   * @param {String} buffer The string to send
+   * @param {String} separator The string that would make each string separate
+   * @param {String} strings Starting from the third parameter (this) until any parameter is the string to append, separated by the separator
    * @returns {undefined}
    */
 
-  sendStringPacket(peerid, string) {
-    return this.#main.getModule().Packets.send(peerid, string);
+  sendStringPacket(peerid, type, separator, ...strings) {
+    let buffer = Buffer.concat([Buffer.from([type, 0x00, 0x00, 0x00]), Buffer.from(strings.join(separator))]);
+    return this.#main.getModule().Packets.send(peerid, buffer.toString());
   }
 
   /**
@@ -496,10 +498,11 @@ class Packet {
   /**
    * Sends the clothes of the peer
    * @param {String} peerid The id of the peer
+   * @param {Boolean} notPlayAudio Whether or not to NOT play the wear clothes audio.
    * @returns {undefined}
    */
 
-  sendClothes(peerid) {
+  sendClothes(peerid, notPlayAudio = false) {
     let player = this.#main.players.get(peerid);
 
     p.create()
@@ -508,7 +511,7 @@ class Packet {
       .float(player.clothes.feet, player.clothes.face, player.clothes.hand)
       .float(player.clothes.back, player.clothes.mask, player.clothes.necklace)
       .intx(player.skinColor)
-      .float(0, 0, 0)
+      .float(player.clothes.ances, 0, 0)
       .end();
 
     let self = this;
@@ -519,7 +522,8 @@ class Packet {
       packet.writeIntLE(player.netID, 8, 4);
 
       self.sendPacket(peer, packet, p.return().len);
-      self.sendSound(peer, "audio/change_clothes.wav", );
+      if (!notPlayAudio)
+        self.sendSound(peer, "audio/change_clothes.wav", 0);
     }, {
       sameWorldCheck: true,
       world: player.currentWorld,
@@ -546,7 +550,7 @@ class Packet {
         .float(player.clothes.feet, player.clothes.face, player.clothes.hand)
         .float(player.clothes.back, player.clothes.mask, player.clothes.necklace)
         .intx(player.skinColor)
-        .float(0, 0, 0)
+        .float(player.clothes.ances, 0, 0)
         .end();
 
       let packet = p.return().data;
@@ -562,7 +566,7 @@ class Packet {
         .float(currentPlayer.clothes.feet, currentPlayer.clothes.face, currentPlayer.clothes.hand)
         .float(currentPlayer.clothes.back, currentPlayer.clothes.mask, currentPlayer.clothes.necklace)
         .intx(currentPlayer.skinColor)
-        .float(0, 0, 0)
+        .float(player.clothes.ances, 0, 0)
         .end();
 
       let packet2 = p.return().data;

@@ -10,10 +10,8 @@ let p = new PacketCreator();
 module.exports = {
   onConnect: function(main, peerid) {
     main.emit('connect', peerid);
-    const data = Buffer.from([0x01, 0x00, 0x00, 0x00, 0x00]).toString();
-
     // send hello packet
-    main.Packet.sendStringPacket(peerid, data);
+    main.Packet.sendStringPacket(peerid, 1, '', '\u0000');
   },
 
   onDisconnect: function(main, peerid) {
@@ -85,8 +83,10 @@ module.exports = {
               .string(errorMsg)
               .end();
 
+            main.Packet.sendStringPacket(peerid, 3, '\n', 'action|set_url', 'url|https://google.com', 'label|`$Retrieve lost password``');
             main.Packet.sendPacket(peerid, p.return().data, p.return().len);
             main.Packet.sendQuit(peerid);
+
             return p.reconstruct();
           } else {
             let password = (await main.playersDB.get(user)).tankIDPass;
@@ -100,6 +100,7 @@ module.exports = {
                 .string(errorMsg)
                 .end();
 
+              main.Packet.sendStringPacket(peerid, 3, '\n', 'action|set_url', 'url|https://google.com', 'label|`$Retrieve lost password``');
               main.Packet.sendPacket(peerid, p.return().data, p.return().len);
               main.Packet.sendQuit(peerid);
               return p.reconstruct();
@@ -274,9 +275,10 @@ module.exports = {
                 oldPlayer.temp.peerid = peerid;
                 oldPlayer.temp.MovementCount = 0;
                 oldPlayer.states = [];
+                oldPlayer.hasClothesUpdated = false;
 
                 main.players.set(peerid, oldPlayer);
-                main.disconnects.delete(oldPeer)
+                main.disconnects.delete(oldPeer);
               } else continue;
             }
             
@@ -300,6 +302,22 @@ module.exports = {
 
           p.reconstruct();
         }
+
+        p.create()
+          .string('OnPaw2018SkinColor1Changed')
+          .int(player.netID)
+          .end();
+
+        main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+        p.reconstruct();
+
+        p.create()
+          .string('OnPaw2018SkinColor2Changed')
+          .int(player.netID)
+          .end();
+
+        main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+        p.reconstruct();
       }
     } else if (packetType === 4) {
       HandleStruct(main, packet, peerid, p);

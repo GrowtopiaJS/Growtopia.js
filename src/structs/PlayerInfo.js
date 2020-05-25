@@ -44,7 +44,8 @@ class PlayerInfo {
 			hand: 0,
 			back: 0,
 			mask: 0,
-			necklace: 0
+			necklace: 0,
+			ances: 0
 		};
 
 		this.skinColor = 0x8295C3FF;
@@ -53,6 +54,7 @@ class PlayerInfo {
 		this.states = [];
 		this.punchEffects = ["Fist"];
 		this.worldsOwned = [];
+		this.gems = 0;
 	}
 
 	addState(state) {
