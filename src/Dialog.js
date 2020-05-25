@@ -78,8 +78,10 @@ class Dialog {
    * @returns {Dialog}
    */
 
-  addButton(name, text) {
-    this.#str += `add_button|${name}|${text}|noflags|0|0|\n`;
+  addButton(name, text, icon) {
+    if (icon)
+      this.#str += `add_button_with_icon|${name}|${text}|noflags|${icon}||\n`;
+    else this.#str += `add_button|${name}|${text}|noflags|0|0|\n`;
     return this;
   }
 
@@ -171,7 +173,7 @@ class Dialog {
    */
 
   raw(str) {
-    this.#str += `${str}`;
+    this.#str += str;
     return this;
   }
 

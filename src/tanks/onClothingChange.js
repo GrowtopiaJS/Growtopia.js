@@ -161,19 +161,19 @@ function changeWlToDl(main, peerid, player, item, p) {
 
         player.inventory.items.push(newItem); // add the dl
       }
+
+      p.create()
+        .string('OnTalkBubble')
+        .intx(player.netID)
+        .string('You compressed 100 `2World Locks`` into a `2Diamond Lock``!')
+        .intx(0)
+        .intx(1)
+        .end();
+
+      main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+      p.reconstruct();
     }
-
-    p.create()
-      .string('OnTalkBubble')
-      .intx(player.netID)
-      .string('You compressed 100 `2World Locks`` into a `2Diamond Lock``!')
-      .intx(0)
-      .intx(1)
-      .end();
-
-    main.Packet.sendPacket(peerid, p.return().data, p.return().len);
-    p.reconstruct();
-
+    
     main.Packet.sendClothes(peerid, true);
     main.Packet.sendInventory(peerid);
   }

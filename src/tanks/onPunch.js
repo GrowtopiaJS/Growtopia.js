@@ -67,6 +67,23 @@ module.exports = function(main, packet, peerid, p, type, data) {
 
     if (punchedBlock) {
       if (worldBlock.breakLevel < (punchedBlock.breakHits / 6) - 1) {
+        if (main.getItems().get(worldBlock.foreground).actionType === Constants.Blocktypes.weather) { // pucnh weather
+          let weatherMachine = main.getItems().get(worldBlock.foreground);
+          let weatherName = weatherMachine.name.split('-')[1].trim();
+
+          if (Constants.WeatherMachines[weatherName] && world.weather !== Constants.WeatherMachines[weatherName])
+            world.weather = Constants.WeatherMachines[weatherName];
+          else if (world.weather !== 0) world.weather = 0;
+
+          p.create()
+            .string('OnSetCurrentWeather')
+            .int(world.weather)
+            .end();
+
+          main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+          p.reconstruct();
+        };
+
         // not destroyed yet
         worldBlock.breakLevel++;
 
@@ -116,7 +133,17 @@ module.exports = function(main, packet, peerid, p, type, data) {
             });
 
             p.reconstruct();
-          }
+          } else if (main.getItems().get(worldBlock.foreground).actionType === Constants.Blocktypes.weather) { // remove weather
+            world.weather = 0;
+
+            p.create()
+              .string('OnSetCurrentWeather')
+              .int(0)
+              .end();
+
+            main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+            p.reconstruct();
+          };
 
           worldBlock.foreground = 0;
         } else if (worldBlock.background > 0)
@@ -174,7 +201,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
     if (blockType === Constants.Blocktypes.background) {
       worldBlock.background = data.plantingTree;
     } else {
-      if ((blockType === 15 && !(Constants.Permissions.admin & player.permissions)) || (data.plantingTree === 202 || data.plantingTree === 204 || data.plantingTree === 206 || data.plantingTree === 4994)) {
+      if ((blockType === 15 && !(Constants.Permissions.admin & player.permissions)) || (data.plantingTree === 5958 || data.plantingTree === 202 || data.plantingTree === 204 || data.plantingTree === 206 || data.plantingTree === 4994)) {
         p.create()
           .string('OnTalkBubble')
           .intx(player.netID)

@@ -70,6 +70,14 @@ module.exports = function(main, packet, peerid, p) {
   main.worlds.set(world.name, world); 
 
   p.create()
+    .string('OnSetCurrentWeather')
+    .int(world.weather)
+    .end();
+
+  main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+  p.reconstruct();
+
+  p.create()
     .string('OnSpawn')
     .string(`spawn|avatar\nnetID|${player.netID}\nuserID|${player.id}\ncolrect|0|0|20|30\nposXY|${x}|${y}\nname|\`\`${player.displayName}\`\`\ninvis|0\nmstate|0\nsmstate|0\ntype|local\n`)
     .end();

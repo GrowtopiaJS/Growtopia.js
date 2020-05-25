@@ -1,5 +1,6 @@
 const PlayerInfo = require('../structs/PlayerInfo');
 const Constants = require('../structs/Constants');
+const InventoryItem = require('../structs/InventoryItem');
 const crypto = require('crypto');
 
 module.exports = function(main, packet, peerid, p) {
@@ -154,6 +155,110 @@ module.exports = function(main, packet, peerid, p) {
         main.Packet.sendClothes(peerid);
       else main.Packet.sendClothes(peerid, true);
 
+      break;
+    }
+
+    case 'selectItem': {
+      let item = main.getItems().get(parseInt(packet.get('buttonClicked')));
+
+      let player = main.players.get(peerid);
+      if (player.inventory.items.filter(i => i.itemID === item.itemID).length < 1) { // no item
+        let newItem = new InventoryItem();
+        newItem.itemID = item.itemID;
+        newItem.itemCount = 1;
+
+        player.inventory.items.push(newItem);
+
+        p.create()
+          .string('OnTalkBubble')
+          .intx(player.netID)
+          .string(`Added \`2${item.name}\`\` to your inventory.`)
+          .intx(0)
+          .intx(1)
+          .end();
+
+        main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+        p.reconstruct();
+      } else { // has item
+        for (let i = 0; i < player.inventory.items.length; i++) {
+          if (player.inventory.items[i].itemCount >= 200 && player.inventory.items[i].itemID === item.itemID) {
+            p.create()
+              .string('OnTalkBubble')
+              .intx(player.netID)
+              .string('Item maxed.')
+              .intx(0)
+              .intx(1)
+              .end();
+
+            main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+            p.reconstruct();
+          } else if (player.inventory.items[i].itemID === item.itemID) {
+            player.inventory.items[i].itemCount++;
+
+            p.create()
+              .string('OnTalkBubble')
+              .intx(player.netID)
+              .string(`Added \`2${item.name}\`\` to your inventory.`)
+              .intx(0)
+              .intx(1)
+              .end();
+
+            main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+            p.reconstruct();
+          } else continue;
+        }
+      };
+
+      main.players.set(peerid, player);
+      main.Packet.sendClothes(peerid, true);
+      main.Packet.sendInventory(peerid);
+      p.reconstruct();
+      break;
+    }
+
+    case 'findItem': {
+      let items = [...main.getItems().values()].filter(item => item.name.toLowerCase().includes(packet.get('itemName')));
+      let dialog = new (require('../Dialog'))();
+
+      if (packet.get('itemName').length < 3) {
+        p.create()
+          .string('OnConsoleMessage')
+          .string('Item length must be `4greater than or equal`o to 4')
+          .end();
+
+        main.Packet.sendPacket(peerid, p.return().data, p.return().len)
+        return p.reconstruct();
+      }
+
+      dialog.addLabelWithIcon(`Items that match with ${packet.get('itemName')}`, 1796, 'big')
+      .addSpacer('small');
+
+      if (items.length < 1) {
+        p.create()
+          .string('OnConsoleMessage')
+          .string(`Can't find an item with the name \`4${packet.get('itemName')}`)
+          .end();
+
+        main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+        dialog.reconstruct();
+        return p.reconstruct();
+      }
+
+      for (let v of items) {
+        dialog.addButton(v.itemID, v.name, v.itemID);
+      }
+
+      dialog.addSpacer('big')
+      .endDialog('selectItem', 'Cancel', '');
+
+      p.create()
+        .string('OnDialogRequest')
+        .string(dialog.str())
+        .end();
+
+      main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+      p.reconstruct();
+      dialog.reconstruct();
       break;
     }
 

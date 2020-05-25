@@ -40,7 +40,7 @@ module.exports = {
   onReceive: async function(main, packet, peerid) {
     const packetType = main.GetPacketType(packet);
     const dataMap = new Map();
-
+  
     if (packetType === 2 || packetType === 3) {
       const decodedPacket = main.GetMessage(packet);
       let split = decodedPacket.split('\n');

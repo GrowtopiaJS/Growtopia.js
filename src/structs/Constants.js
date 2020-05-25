@@ -16,7 +16,8 @@ module.exports = {
     locks: 3,
     consumables: 8,
     foreground: 17,
-    background: 18
+    background: 18,
+    weather: 41
   },
 
   tankPackets: {
@@ -39,7 +40,19 @@ module.exports = {
     Comet: 17,
     Party: 18,
     Pineapples: 19,
-    'Snowy Night': 20
+    'Snowy Night': 20,
+    Spring: 21,
+    'Howling Sky': 22,
+    Pagoda: 30,
+    Apocalypse: 31,
+    Jungle: 32,
+    'Balloon Warz': 33,
+    Autumn: 35,
+    'Valentine\'s': 36,
+    'St. Paddy\'s Day': 37,
+    'Digital Rain': 42,
+    'Meteor Shower': 47,
+    'Stargazing': 48
   },
 
   ItemEffects: {
