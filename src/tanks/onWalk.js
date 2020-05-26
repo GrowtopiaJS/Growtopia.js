@@ -17,7 +17,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
 
       for (let i = 0; i < clothes.length; i++) {
         if (Constants.wings.includes(clothes[i]))
-          haveDoubleJump = 1;    
+          haveDoubleJump = 1;
       }
 
       if (haveDoubleJump) {

@@ -36,7 +36,7 @@
               'AdditionalOptions': ['/std:c++17', '/EHsc']
             }
           },
-          'defines': [ 'NAPI_CPP_EXCEPTIONS' ] 
+          'defines': [ 'NAPI_CPP_EXCEPTIONS' ]
         }]
       ]
     }

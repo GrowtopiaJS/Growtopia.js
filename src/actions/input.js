@@ -69,7 +69,7 @@ module.exports = function(main, packet, peerid, p) {
       world: player.currentWorld,
       peer: peerid
     });
-    
+
     p.reconstruct();
   }
 };

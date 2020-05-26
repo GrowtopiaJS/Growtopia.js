@@ -67,7 +67,7 @@ string Utils::getUID(ENetPeer* peer)
 
 	for (int i=0; i<serverIDSize; ++i)
 		ret[i] = serverID[i];
-	
+
 	for (int i=0; i<8; ++i)
 		ret[i+serverIDSize] = digits[(id>>(i<<2)) & 0x0f];
 

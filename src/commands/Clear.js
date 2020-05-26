@@ -34,7 +34,7 @@ module.exports = {
 
       for (let i = 0; i < world.items.length; i++) {
         let item = main.getItems().get(world.items[i].foreground || world.items[i].background);
-        
+
         if (item.actionType === Constants.Blocktypes.locks || item.actionType === Constants.Blocktypes.weather) continue; // ignore weather and locks
         if ((world.items[i].foreground === 6 && world.items[i].background === 0) || world.items[i].foreground === 8) continue;
 

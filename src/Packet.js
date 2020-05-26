@@ -58,7 +58,7 @@ class Packet {
       if (player) {
         player.hasClothesUpdated = false;
         player.currentWorld = 'EXIT';
-        
+
         this.#main.playersDB.set(player.rawName, player);
         this.#main.players.delete(peerid);
 
@@ -457,9 +457,9 @@ class Packet {
 
       let packedData = self.packPlayerMoving(data);
       let effect = Constants.ItemEffects[player.punchEffects[player.punchEffects.length - 1]];
-        
+
       packedData.writeUIntLE(effect, 1, 3);
-      
+
       let waterSpeed = 125.0;
       packedData.writeFloatLE(waterSpeed, 16, 4);
 
@@ -593,7 +593,7 @@ class Packet {
    * @param {String} peerid The peer id that requested this
    * @param {Number} x X location
    * @param {Number} y Y location
-   * @param {Number} plantingTree The block 
+   * @param {Number} plantingTree The block
    * @param {Number} [netID=-1] The netID
    * @returns {undefined}
    */
@@ -650,7 +650,7 @@ class Packet {
         .string(`\`\`\`0${nickname}`)
         .end()
         .return();
-      
+
       p2.data.writeIntLE(player.netID, 8, 4);
       self.sendPacket(peer, p2.data, p2.len);
       p.reconstruct();

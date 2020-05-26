@@ -36,7 +36,7 @@ namespace Host
 		{
 			return Boolean::New(env, false);
 		}
-		
+
 		else
 		{
 			return Boolean::New(env, true);
@@ -44,7 +44,7 @@ namespace Host
 	}
 
 	void create(const CallbackInfo& info)
-	{		
+	{
 		Object data = info[0].As<Object>();
 
 		int channels = data.Get("channels").As<Number>().Uint32Value();
@@ -54,7 +54,7 @@ namespace Host
 
 		address.host = ENET_HOST_ANY;
 		address.port = data.Get("port").As<Number>().Uint32Value();
-		
+
 		Utils::setAddress(address);
 		Utils::setServer(enet_host_create(&address, channels, peers, ico, ogo));
 	}
@@ -127,7 +127,7 @@ namespace Host
 	String getIP(const CallbackInfo& info)
 	{
 		Env env = info.Env();
-		string peerid = info[0].As<String>().Utf8Value();	
+		string peerid = info[0].As<String>().Utf8Value();
 		ENetPeer* peer = Utils::getPeer(peerid);
 
 		char clientConnection[16];
@@ -136,4 +136,4 @@ namespace Host
 		string ip(clientConnection);
 		return String::New(env, ip);
 	}
-}	
+}

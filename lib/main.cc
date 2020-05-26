@@ -8,7 +8,7 @@ using namespace Napi;
 #include "lib/HandleFunc.hpp"
 
 Object Init(Env env, Object exports)
-{	
+{
 	HandleFunc::reg(env, exports);
 
 	return exports;

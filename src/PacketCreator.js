@@ -138,7 +138,7 @@ class PacketCreator {
 
     return this;
   }
-  
+
   /**
    * Appends floats to the packet
    * @param {Float} val The fist float to append

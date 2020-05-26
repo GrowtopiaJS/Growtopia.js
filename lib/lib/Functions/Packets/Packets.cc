@@ -14,7 +14,7 @@ namespace Packets
 	{
 		string id = info[0].As<String>().Utf8Value();
 		string data = info[1].As<String>().Utf8Value();
-		
+
 		ENetPeer* peer = Utils::getPeer(id);
 
 		enet_peer_send(peer, 0, enet_packet_create(data.c_str(), data.size(), ENET_PACKET_FLAG_RELIABLE));
