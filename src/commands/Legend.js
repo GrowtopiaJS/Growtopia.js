@@ -8,10 +8,10 @@ module.exports = {
     let nick;
 
     if (player.isLegend) {
-      nick = player.displayName.slice(0, " of Legend``".length - 3);
+      nick = player.displayName.slice(2).slice(0, " of Legend``".length - 3);
       player.isLegend = false;
     } else {
-      nick = `${player.displayName} of Legend\`\``
+      nick = `\`9${player.displayName} of Legend\`\``
       player.isLegend = true;
 
       main.Packet.sendSound(peerid, "audio/choir.wav", 0);

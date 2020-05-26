@@ -280,7 +280,7 @@ module.exports = {
                 oldPlayer.hasClothesUpdated = false;
                 
                 if (oldPlayer.displayName.includes('of Legend'))
-                  oldPlayer.displayName = oldPlayer.displayName.slice(0, " of Legend``".length - 3);
+                  oldPlayer.displayName = oldPlayer.displayName.slice(2).slice(0, " of Legend``".length - 3);
 
                 main.players.set(peerid, oldPlayer);
                 main.disconnects.delete(oldPeer);

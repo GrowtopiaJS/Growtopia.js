@@ -13,7 +13,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
     if (item.itemID === 1904) // the one ring
       player.removeState('isInvis');
 
-    if (Constants.wings.includes(data.plantingTree) || item.clothingType === 6 && Object.values(player.clothes).filter(c => Constants.wings.includes(c[1])).length > 1)
+    if (item.clothingType === 6 && Object.values(player.clothes).filter(i => Constants.wings.includes(i)).length < 1)
       player.removeState('canDoubleJump');
 
     if (Constants.ItemEffects[item.name] && player.punchEffects.includes(item.name)) 

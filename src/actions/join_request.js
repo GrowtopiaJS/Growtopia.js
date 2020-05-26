@@ -61,7 +61,7 @@ module.exports = function(main, packet, peerid, p) {
   player.y = Math.floor(y);
 
   if (player.isLegend)
-    player.displayName = `${player.displayName} of Legend\`\``;
+    player.displayName = `\`9${player.displayName} of Legend\`\``;
 
   main.players.set(peerid, player);
   
