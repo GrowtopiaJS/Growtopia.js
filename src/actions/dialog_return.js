@@ -234,7 +234,7 @@ module.exports = function(main, packet, peerid, p) {
 
       let items = [...main.getItems().values()].filter(item => item.name.toLowerCase().includes(itemName.toLowerCase()));
 
-      dialog.addLabelWithIcon(`Items that match with ${itemName}`, 1796, 'big')
+      dialog.addLabelWithIcon(`Items that match with "${itemName}"`, 1796, 'big')
       .addSpacer('small');
 
       if (items.length < 1) {
@@ -249,6 +249,7 @@ module.exports = function(main, packet, peerid, p) {
       }
 
       for (let v of items) {
+        if (v.itemID % 2 > 0) continue;
         dialog.addButton(v.itemID, v.name, v.itemID);
       }
 
