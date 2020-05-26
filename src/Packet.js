@@ -57,6 +57,8 @@ class Packet {
 
       if (player) {
         player.hasClothesUpdated = false;
+        player.currentWorld = 'EXIT';
+        
         this.#main.playersDB.set(player.rawName, player);
         this.#main.players.delete(peerid);
 
@@ -256,10 +258,14 @@ class Packet {
       this.sendPacket(peerid, p.return().data, p.return().len);
       p.reconstruct();
 
+      if (player.isLegend)
+        player.displayName = player.displayName.slice(0, " of Legend``".length - 3);
+
       player.currentWorld = "EXIT";
       player.temp.MovementCount = 0;
       player.hasClothesUpdated = false;
       this.#main.players.set(peerid, player);
+      this.setNickname(peerid, player.displayName);
     }
   }
 
@@ -378,17 +384,16 @@ class Packet {
       if (playerInfo.id === world.owner.id && !playerInfo.displayName.includes('`2'))
         self.setNickname(peerid, `\`2${playerInfo.displayName}`);
 
-      self.onSpawn(peerid, `spawn|avatar\nnetID|${playerInfo.netID}\nuserID|${playerInfo.id}\ncolrect|0|0|20|30\nposXY|${playerInfo.x}|${playerInfo.y}\nname|\`\`${playerInfo.displayName}\`\`\ncountry|${playerInfo.country}\ninvis|0\nmstate|0\nsmstate|0\n`);
+      self.onSpawn(peerid, `spawn|avatar\nnetID|${playerInfo.netID}\nuserID|${playerInfo.id}\ncolrect|0|0|20|30\nposXY|${playerInfo.x}|${playerInfo.y}\nname|${playerInfo.isLegend ? playerInfo.displayName : playerInfo.displayName + '``'}\ncountry|${playerInfo.country}\ninvis|0\nmstate|0\nsmstate|0\n`);
 
       playerInfo = self.#main.players.get(peerid);
 
       if (playerInfo.id === world.owner.id && !playerInfo.displayName.includes('`2'))
         self.setNickname(peerid, `\`2${playerInfo.displayName}`);
 
-      self.onSpawn(peer, `spawn|avatar\nnetID|${playerInfo.netID}\nuserID|${playerInfo.id}\ncolrect|0|0|20|30\nposXY|${playerInfo.x}|${playerInfo.y}\nname|\`\`${playerInfo.displayName}\`\`\ncountry|${playerInfo.country}\ninvis|0\nmstate|0\nsmstate|0\n`);
+      self.onSpawn(peer, `spawn|avatar\nnetID|${playerInfo.netID}\nuserID|${playerInfo.id}\ncolrect|0|0|20|30\nposXY|${playerInfo.x}|${playerInfo.y}\nname|${playerInfo.isLegend ? playerInfo.displayName : playerInfo.displayName + '``'}\ncountry|${playerInfo.country}\ninvis|0\nmstate|0\nsmstate|0\n`);
     }, {
       sameWorldCheck: true,
-      world: world.name,
       peer: peerid,
       runIfNotSame: true
     });
@@ -410,8 +415,10 @@ class Packet {
 
     msg += '\nadd_button|Showing: `wWorlds``|_catselect_|0.6|3529161471|';
 
-    for (let [key, value] of this.#main.worlds) {
-      msg += `\nadd_button|\`w${key}\`\`|${key}|0.6|3529161471`;
+    let worlds = [...this.#main.worlds.values()];
+    for (let i = 0; i < worlds.length; i++) {
+      if (i > 10) continue;
+      msg += `\nadd_button|\`w${worlds[i].name}\`\`|${worlds[i].name}|0.6|3529161471`;
     }
 
     p.create()
@@ -510,7 +517,7 @@ class Packet {
       .float(player.clothes.hair, player.clothes.shirt, player.clothes.pants)
       .float(player.clothes.feet, player.clothes.face, player.clothes.hand)
       .float(player.clothes.back, player.clothes.mask, player.clothes.necklace)
-      .intx(player.skinColor)
+      .intx(player.states.includes('canWalkInBlocks') ? 0xe6e6e659 : player.skinColor)
       .float(player.clothes.ances, 0, 0)
       .end();
 
@@ -549,7 +556,7 @@ class Packet {
         .float(player.clothes.hair, player.clothes.shirt, player.clothes.pants)
         .float(player.clothes.feet, player.clothes.face, player.clothes.hand)
         .float(player.clothes.back, player.clothes.mask, player.clothes.necklace)
-        .intx(player.skinColor)
+        .intx(player.states.includes('canWalkInBlocks') ? 0xe6e6e659 : player.skinColor)
         .float(player.clothes.ances, 0, 0)
         .end();
 
@@ -565,8 +572,8 @@ class Packet {
         .float(currentPlayer.clothes.hair, currentPlayer.clothes.shirt, currentPlayer.clothes.pants)
         .float(currentPlayer.clothes.feet, currentPlayer.clothes.face, currentPlayer.clothes.hand)
         .float(currentPlayer.clothes.back, currentPlayer.clothes.mask, currentPlayer.clothes.necklace)
-        .intx(currentPlayer.skinColor)
-        .float(player.clothes.ances, 0, 0)
+        .intx(currentPlayer.states.includes('canWalkInBlocks') ? 0xe6e6e659 : currentPlayer.skinColor)
+        .float(currentPlayer.clothes.ances, 0, 0)
         .end();
 
       let packet2 = p.return().data;

@@ -244,7 +244,9 @@ module.exports = {
               main.Packet.sendPacket(peerid, p.return().data, p.return().len);
 
               fromDiscon = true;
-              //main.Packet.sendPlayerLeave(peer);
+              if (currentPlayer.currentWorld && currentPlayer.currentWorld !== 'EXIT')
+                main.Packet.sendPlayerLeave(peer);
+                
               main.Packet.sendQuit(peer);
 
               main.disconnects.set(peer, currentPlayer);
@@ -276,6 +278,9 @@ module.exports = {
                 oldPlayer.temp.MovementCount = 0;
                 oldPlayer.states = [];
                 oldPlayer.hasClothesUpdated = false;
+                
+                if (oldPlayer.displayName.includes('of Legend'))
+                  oldPlayer.displayName = oldPlayer.displayName.slice(0, " of Legend``".length - 3);
 
                 main.players.set(peerid, oldPlayer);
                 main.disconnects.delete(oldPeer);

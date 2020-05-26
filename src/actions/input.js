@@ -3,6 +3,8 @@ module.exports = function(main, packet, peerid, p) {
   let player = main.players.get(peerid);
   let world = main.worlds.get(player.currentWorld);
 
+  if (!text) return;
+
   if (text.trim().length > 0) {
     let msg = "";
 

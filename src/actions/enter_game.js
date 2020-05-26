@@ -53,4 +53,5 @@ module.exports = function(main, packet, peerid, p) {
   player.inventory = inv;
 
   main.players.set(peerid, player);
+  main.Packet.setNickname(peerid, player.displayName + '``');
 };

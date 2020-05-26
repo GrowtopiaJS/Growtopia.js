@@ -2,13 +2,14 @@ const Dialog = require('../Dialog');
 
 module.exports = {
   name: 'find',
+  requiredPerms: 1,
   run: function(main, arguments, peerid, p) {
-    let name = arguments.join(' ');
-    let items = main.getItems();
+    let itemName = arguments.join(' ');
 
+    if (!itemName || itemName.trim().length < 1) itemName = '';
     let dialog = new Dialog()
-      .addLabelWithIcon('Find your item!', '1948', 'small')
-      .addInputBox('itemName', '', '', 30)
+      .addLabelWithIcon('Find your item!', '1796', 'big')
+      .addInputBox('itemName', '', itemName, 15)
       .endDialog('findItem', 'Cancel', 'OK');
     /*for (let [k, v] of items) {
       dialog.addButton(v.itemID, v.name, v.itemID)

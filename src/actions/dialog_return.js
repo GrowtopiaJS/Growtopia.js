@@ -72,6 +72,7 @@ module.exports = function(main, packet, peerid, p) {
       newPlayer.temp = {};
       newPlayer.isGuest = false;
       newPlayer.registeredName = username;
+      newPlayer.currentWorld = 'EXIT';
 
       main.playersDB.set(newPlayer.rawName, newPlayer);
       p.create()
@@ -132,6 +133,7 @@ module.exports = function(main, packet, peerid, p) {
       let item = main.getItems().get(itemID);
 
       if (!trashedItem) return;
+      let wasNotClothing = true;
 
       for (let i = 0; i < clothes.length; i++) {
         if (clothes[i][1] !== trashedItem.itemID || trashedItem.itemCount + 1 > 1) continue; // +1 because we already removed it from inventory
@@ -145,6 +147,7 @@ module.exports = function(main, packet, peerid, p) {
         if (Constants.ItemEffects[item.name] && player.punchEffects.includes(item.name))
           player.removePunchEffect(item.name);
 
+          wasNotClothing = false;
         player.clothes[clothes[i][0]] = 0;
       }
 
@@ -152,7 +155,7 @@ module.exports = function(main, packet, peerid, p) {
       main.Packet.sendState(peerid);
       
       if (trashedItem.itemCount < 1)
-        main.Packet.sendClothes(peerid);
+        main.Packet.sendClothes(peerid, wasNotClothing);
       else main.Packet.sendClothes(peerid, true);
 
       break;
@@ -217,10 +220,9 @@ module.exports = function(main, packet, peerid, p) {
     }
 
     case 'findItem': {
-      let items = [...main.getItems().values()].filter(item => item.name.toLowerCase().includes(packet.get('itemName')));
       let dialog = new (require('../Dialog'))();
-
-      if (packet.get('itemName').length < 3) {
+      let itemName = packet.get('itemName') ? packet.get('itemName').trim() : '';
+      if (itemName.length < 3) {
         p.create()
           .string('OnConsoleMessage')
           .string('Item length must be `4greater than or equal`o to 4')
@@ -230,13 +232,15 @@ module.exports = function(main, packet, peerid, p) {
         return p.reconstruct();
       }
 
-      dialog.addLabelWithIcon(`Items that match with ${packet.get('itemName')}`, 1796, 'big')
+      let items = [...main.getItems().values()].filter(item => item.name.toLowerCase().includes(itemName.toLowerCase()));
+
+      dialog.addLabelWithIcon(`Items that match with ${itemName}`, 1796, 'big')
       .addSpacer('small');
 
       if (items.length < 1) {
         p.create()
           .string('OnConsoleMessage')
-          .string(`Can't find an item with the name \`4${packet.get('itemName')}`)
+          .string(`Can't find an item with the name \`4${itemName}`)
           .end();
 
         main.Packet.sendPacket(peerid, p.return().data, p.return().len);
@@ -249,7 +253,8 @@ module.exports = function(main, packet, peerid, p) {
       }
 
       dialog.addSpacer('big')
-      .endDialog('selectItem', 'Cancel', '');
+      .addQuickExit()
+      .endDialog('selectItem', '', '');
 
       p.create()
         .string('OnDialogRequest')

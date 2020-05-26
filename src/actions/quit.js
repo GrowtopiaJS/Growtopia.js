@@ -1,5 +1,6 @@
 module.exports = function(main, packet, peerid, p) {
   let player = main.players.get(peerid);
+  player.currentWorld = 'EXIT';
 
   if (player) {
     main.playersDB.set(player.rawName, player);

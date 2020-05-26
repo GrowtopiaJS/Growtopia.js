@@ -60,6 +60,9 @@ module.exports = function(main, packet, peerid, p) {
   player.x = Math.floor(x);
   player.y = Math.floor(y);
 
+  if (player.isLegend)
+    player.displayName = `${player.displayName} of Legend\`\``;
+
   main.players.set(peerid, player);
   
   if (player.id === world.owner.id) {
@@ -79,7 +82,7 @@ module.exports = function(main, packet, peerid, p) {
 
   p.create()
     .string('OnSpawn')
-    .string(`spawn|avatar\nnetID|${player.netID}\nuserID|${player.id}\ncolrect|0|0|20|30\nposXY|${x}|${y}\nname|\`\`${player.displayName}\`\`\ninvis|0\nmstate|0\nsmstate|0\ntype|local\n`)
+    .string(`spawn|avatar\nnetID|${player.netID}\nuserID|${player.id}\ncolrect|0|0|20|30\nposXY|${x}|${y}\nname|${player.isLegend ? player.displayName : player.displayName + '``'}\ninvis|0\nmstate|0\nsmstate|0\ntype|local\n`)
     .end();
 
   main.Packet.sendPacket(peerid, p.return().data, p.return().len);
@@ -106,4 +109,7 @@ module.exports = function(main, packet, peerid, p) {
     main.Packet.sendPacket(peerid, p.return().data, p.return().len);
     p.reconstruct();
   }
+
+  main.players.set(peerid, player)
+  main.Packet.setNickname(peerid, player.displayName);
 };

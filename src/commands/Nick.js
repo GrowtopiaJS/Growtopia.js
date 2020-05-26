@@ -7,6 +7,16 @@ module.exports = {
     let player = main.players.get(peerid);
     let nick = arguments.join(' ');
 
+    if (player.isLegend) {
+      p.create()
+        .string('OnConsoleMessage')
+        .string('Cannot remove `2Legend title`` with /nick.')
+        .end();
+
+      main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+      return p.reconstruct();
+    }
+
     if (!nick.match(/^[a-zA-Z0-9]+$/g) && nick.length > 0) {
       p.create()
         .string('OnConsoleMessage')

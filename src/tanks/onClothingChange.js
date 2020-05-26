@@ -13,7 +13,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
     if (item.itemID === 1904) // the one ring
       player.removeState('isInvis');
 
-    if (Constants.wings.includes(data.plantingTree))
+    if (Constants.wings.includes(data.plantingTree) || item.clothingType === 6 && Object.values(player.clothes).filter(c => Constants.wings.includes(c[1])).length > 1)
       player.removeState('canDoubleJump');
 
     if (Constants.ItemEffects[item.name] && player.punchEffects.includes(item.name)) 
@@ -23,6 +23,26 @@ module.exports = function(main, packet, peerid, p, type, data) {
     main.Packet.sendClothes(peerid);
     return main.Packet.sendState(peerid);
   } else {
+    let removedItem = main.getItems().get(player.clothes.back);
+    let clothes = Object.values(player.clothes);
+
+    if (item.clothingType === 6 && removedItem) {
+      // replaced wings or back item
+      let removeDoubleJump = 1;
+
+      if (!Constants.wings.includes(item.itemID)) { // if they replace back with non double jump 
+        for (let i = 0; i < clothes.length; i++) {
+          if (!removeDoubleJump) continue;
+          
+          if (Constants.wings.includes(clothes[i])) // they have equipped item that can double jump
+            removeDoubleJump = 0;
+        }
+
+        if (removeDoubleJump)
+          player.removeState('canDoubleJump');
+      }
+    }
+
     if (!player.punchEffects.includes(item.name)) {
       let itemData = [];
 
@@ -59,7 +79,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
   }
 
   if (Constants.wings.includes(data.plantingTree))
-    player.addState('canDoubleJump')
+    player.addState('canDoubleJump');
 
   if (item.actionType === Constants.Blocktypes.locks)// double click locks, e.g wl turns to dl
     return item.itemID === 242 ? changeWlToDl(main, peerid, player, item, p) : changeDlToWl(main, peerid, player, item, p);

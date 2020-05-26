@@ -55,6 +55,7 @@ class PlayerInfo {
 		this.punchEffects = ["Fist"];
 		this.worldsOwned = [];
 		this.gems = 0;
+		this.isLegend = 0;
 	}
 
 	addState(state) {

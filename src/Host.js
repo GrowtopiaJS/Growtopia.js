@@ -120,6 +120,7 @@ class Host extends EventEmitter {
       for (let [peerid, player] of this.#main.players) {
         player.temp.peerid = "";
         player.temp.MovementCount = 0;
+        player.currentWorld = 'EXIT';
 
         if (!player.tankIDName)
           continue;

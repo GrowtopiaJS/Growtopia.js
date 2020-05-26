@@ -12,8 +12,16 @@ module.exports = function(main, packet, peerid, p, type, data) {
       main.Packet.setNickname(peerid, `\`2${player.displayName}`);
 
     main.Packet.broadcast(function(peer) {
-      if (Constants.wings.includes(player.clothes.back)) {
-        player.addState('canDoubleJump');
+      let clothes = Object.values(player.clothes);
+      let haveDoubleJump = 0;
+
+      for (let i = 0; i < clothes.length; i++) {
+        if (Constants.wings.includes(clothes[i]))
+          haveDoubleJump = 1;    
+      }
+
+      if (haveDoubleJump) {
+        player.addState('canDoubleJump')
         return main.Packet.sendState(peerid);
       }
     }, {

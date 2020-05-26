@@ -28,5 +28,7 @@ module.exports = {
 
       main.Packet.sendState(peerid);
     };
+
+    main.Packet.sendClothes(peerid, true);
   }
 };

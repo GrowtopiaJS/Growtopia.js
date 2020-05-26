@@ -1,3 +1,5 @@
+const Constants = require('../structs/Constants');
+
 module.exports = {
   name: 'clear',
   requiredPerms: 2,
@@ -11,6 +13,9 @@ module.exports = {
       let check = 0;
 
       for (let i = 0; i < world.items.length; i++) {
+        let item = main.getItems().get(world.items[i].foreground || world.items[i].background);
+        if (item.actionType === Constants.Blocktypes.locks || item.actionType === Constants.Blocktypes.weather) continue; // ignore weather and locks
+
         if (world.items[i].foreground === 6 || world.items[i].foreground === 8) continue;
         if (world.items[i].foreground === 0 && world.items[i].background === 0) continue;
 
@@ -28,6 +33,9 @@ module.exports = {
       }
 
       for (let i = 0; i < world.items.length; i++) {
+        let item = main.getItems().get(world.items[i].foreground || world.items[i].background);
+        
+        if (item.actionType === Constants.Blocktypes.locks || item.actionType === Constants.Blocktypes.weather) continue; // ignore weather and locks
         if ((world.items[i].foreground === 6 && world.items[i].background === 0) || world.items[i].foreground === 8) continue;
 
         if (world.items[i].foreground === 6) {
