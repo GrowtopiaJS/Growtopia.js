@@ -153,7 +153,7 @@ module.exports = function(main, packet, peerid, p) {
 
       main.players.set(peerid, player);
       main.Packet.sendState(peerid);
-
+      
       if (trashedItem.itemCount < 1)
         main.Packet.sendClothes(peerid, wasNotClothing);
       else main.Packet.sendClothes(peerid, true);

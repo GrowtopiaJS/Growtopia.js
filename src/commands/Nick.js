@@ -37,7 +37,7 @@ module.exports = {
         nick = '`#@' + nick;
       else if (isAdmin > 0)
         nick = '`6@' + nick;
-    }
+    } 
 
     player.displayName = nick;
 

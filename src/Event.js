@@ -16,9 +16,20 @@ module.exports = {
 
   onDisconnect: function(main, peerid) {
     main.emit('disconnect', peerid);
+    let player = main.players.get(peerid);
+
+    if (player && player.currentWorld) { // remove them from world if not yet removed
+      let world = main.worlds.get(player.currentWorld);
+      if (world) {
+        world.players = world.players.filter(w => w.tankIDName !== player.tankIDName);
+        main.worlds.set(world.name, world);
+      }
+    }
+
     if (main.players.has(peerid))
       main.players.delete(peerid);
-    let player = main.disconnects.get(peerid);
+
+    player = main.disconnects.get(peerid);
 
     if (!main.Host.checkIfConnected(peerid)) {
       if (player) {
@@ -40,7 +51,7 @@ module.exports = {
   onReceive: async function(main, packet, peerid) {
     const packetType = main.GetPacketType(packet);
     const dataMap = new Map();
-
+  
     if (packetType === 2 || packetType === 3) {
       const decodedPacket = main.GetMessage(packet);
       let split = decodedPacket.split('\n');
@@ -180,14 +191,15 @@ module.exports = {
         player.states = [];
         player.hasClothesUpdated = false;
         player.permissions = player.isGuest ? 0 : (player.permissions === 0 ? 1 : player.permissions);
-
+        player.gems = player.gems > 2147483647 ? 2147483647 : player.gems;
+        
         for (let [k, v] of main.worlds) {
           if (player.worldsOwned.includes(v.name)) continue;
 
           if (v.owner.id === player.id)
             player.worldsOwned.push(v.name);
         }
-
+        
         if (!player.id) {
           main.lastID += 2;
           player.id = main.lastID;
@@ -246,7 +258,7 @@ module.exports = {
               fromDiscon = true;
               if (currentPlayer.currentWorld && currentPlayer.currentWorld !== 'EXIT')
                 main.Packet.sendPlayerLeave(peer);
-
+                
               main.Packet.sendQuit(peer);
 
               main.disconnects.set(peer, currentPlayer);
@@ -278,7 +290,7 @@ module.exports = {
                 oldPlayer.temp.MovementCount = 0;
                 oldPlayer.states = [];
                 oldPlayer.hasClothesUpdated = false;
-
+                
                 if (oldPlayer.displayName.includes('of Legend'))
                   oldPlayer.displayName = oldPlayer.displayName.slice(2).slice(0, " of Legend``".length - 3);
 
@@ -286,7 +298,7 @@ module.exports = {
                 main.disconnects.delete(oldPeer);
               } else continue;
             }
-
+            
             if (main.Host.checkIfConnected(peerid))
               main.Packet.sendPacket(peerid, p.return().data, p.return().len);
 

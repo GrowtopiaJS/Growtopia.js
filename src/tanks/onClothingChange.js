@@ -16,7 +16,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
     if (item.clothingType === 6 && Object.values(player.clothes).filter(i => Constants.wings.includes(i)).length < 1)
       player.removeState('canDoubleJump');
 
-    if (Constants.ItemEffects[item.name] && player.punchEffects.includes(item.name))
+    if (Constants.ItemEffects[item.name] && player.punchEffects.includes(item.name)) 
       player.removePunchEffect(item.name);
 
     main.players.set(peerid, player);
@@ -30,10 +30,10 @@ module.exports = function(main, packet, peerid, p, type, data) {
       // replaced wings or back item
       let removeDoubleJump = 1;
 
-      if (!Constants.wings.includes(item.itemID)) { // if they replace back with non double jump
+      if (!Constants.wings.includes(item.itemID)) { // if they replace back with non double jump 
         for (let i = 0; i < clothes.length; i++) {
           if (!removeDoubleJump) continue;
-
+          
           if (Constants.wings.includes(clothes[i])) // they have equipped item that can double jump
             removeDoubleJump = 0;
         }
@@ -73,7 +73,7 @@ module.exports = function(main, packet, peerid, p, type, data) {
             }
             player.addPunchEffect(item.name);
           }
-        }
+        }  
       }
     }
   }
@@ -193,7 +193,7 @@ function changeWlToDl(main, peerid, player, item, p) {
       main.Packet.sendPacket(peerid, p.return().data, p.return().len);
       p.reconstruct();
     }
-
+    
     main.Packet.sendClothes(peerid, true);
     main.Packet.sendInventory(peerid);
   }

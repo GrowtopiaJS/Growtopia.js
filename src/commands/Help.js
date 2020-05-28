@@ -1,3 +1,5 @@
+const Constants = require('../structs/Constants');
+
 module.exports = {
   name: 'help',
   run: function(main, arguments, peerid, p) {
@@ -9,6 +11,10 @@ module.exports = {
         commands.push(key);
     }
 
+    // actions
+    for (let action of Constants.Actions)
+      commands.push(action);
+    
     p.create()
       .string('OnConsoleMessage')
       .string(`Available commands: \`w${commands.map(command => `/${command}`).join(' ')}`)

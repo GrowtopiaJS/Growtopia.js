@@ -1,3 +1,5 @@
+const Constants = require('../structs/Constants');
+
 module.exports = function(main, packet, peerid, p) {
   let text = packet.get('text');
   let player = main.players.get(peerid);
@@ -12,9 +14,26 @@ module.exports = function(main, packet, peerid, p) {
       let arguments = text.slice(1).split(/ +/g);
       let command = arguments.shift().toLowerCase();
 
-      if (main.commands.has(command)) {
+      if (main.commands.has(command) || Constants.Actions.includes(command.toLowerCase())) {
         let cmd = main.commands.get(command);
-        if ((cmd.requiredPerms & player.permissions) || cmd.requiredPerms === 0 || player.permissions > cmd.requiredPerms)
+
+        if (Constants.Actions.includes(command.toLowerCase())) {
+          p.create()
+            .string('OnAction')
+            .string(`/${command}`)
+            .netID(player.netID)
+            .end();
+
+          //main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+          main.Packet.broadcast(function(peer) {
+            main.Packet.sendPacket(peer, p.return().data, p.return().len);
+          }, {
+            sameWorldCheck: true,
+            peer: peerid
+          });
+
+          return p.reconstruct();
+        } else if ((cmd.requiredPerms & player.permissions) || cmd.requiredPerms === 0 || player.permissions > cmd.requiredPerms)
           return cmd.run(main, arguments, peerid, p);
         else {
           p.create()
@@ -22,8 +41,8 @@ module.exports = function(main, packet, peerid, p) {
             .string(`Command \`4${command}\`o not found.`)
             .end();
 
-        main.Packet.sendPacket(peerid, p.return().data, p.return().len);
-        return p.reconstruct();
+          main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+          return p.reconstruct();
         }
       } else {
         p.create()
@@ -36,8 +55,10 @@ module.exports = function(main, packet, peerid, p) {
       };
     }
 
-    if (player.roles.includes('mod') || player.roles.includes('admin'))
+    if (player.roles.includes('mod') && !player.roles.includes('admin'))
       msg += '`^';
+    else if (player.roles.includes('admin'))
+      msg += '`5';
 
     msg += text;
     msg = msg.trim().split(/ +/g).join(' ');
@@ -69,7 +90,7 @@ module.exports = function(main, packet, peerid, p) {
       world: player.currentWorld,
       peer: peerid
     });
-
+    
     p.reconstruct();
   }
 };

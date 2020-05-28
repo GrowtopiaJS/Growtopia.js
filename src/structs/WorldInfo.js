@@ -11,6 +11,7 @@ class WorldInfo {
     this.bannedPlayers = [];
     this.bannedGuests = [];
     this.weather = "";
+    this.bpm = 0;
   }
 };
 

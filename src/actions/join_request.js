@@ -64,13 +64,13 @@ module.exports = function(main, packet, peerid, p) {
     player.displayName = `\`9${player.displayName} of Legend\`\``;
 
   main.players.set(peerid, player);
-
+  
   if (player.id === world.owner.id) {
     player.addRole('worldOwner');
     world.owner = player;
   } else player.removeRole('worldOwner');
 
-  main.worlds.set(world.name, world);
+  main.worlds.set(world.name, world); 
 
   p.create()
     .string('OnSetCurrentWeather')

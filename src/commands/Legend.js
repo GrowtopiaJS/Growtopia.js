@@ -8,7 +8,7 @@ module.exports = {
     let nick;
 
     if (player.isLegend) {
-      nick = player.displayName.slice(2).slice(0, " of Legend``".length - 3);
+      nick = player.displayName.slice(0, player.displayName.length - " of Legend``".length)
       player.isLegend = false;
     } else {
       nick = `\`9${player.displayName} of Legend\`\``

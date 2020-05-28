@@ -61,7 +61,7 @@ class Main extends EventEmitter {
     for (let i = 0; i < files.length; i++) {
       let file = require(`${__dirname}/tanks/${files[i]}`);
       this.tanks.set(files[i].split('.js')[0], file);
-
+  
       console.log(`Loaded ${files[i].split('.js')[0]} tank packet.`);
     }
   }
@@ -75,7 +75,7 @@ class Main extends EventEmitter {
 
   #startWebserver = function() {
     this.webServer = exec('node web.js', function(error, out, input) {
-      if (error)
+      if (error) 
         throw new Error(error);
     });
   }
@@ -579,7 +579,7 @@ class Main extends EventEmitter {
       if (itemsDatVersion >= 11) {
         const punchOptionsLength = data.readInt16LE(mempos);
         mempos += 2;
-
+        
         for (var y = 0; y < punchOptionsLength; y++) {
           punchOptions += String.fromCharCode(data[mempos]);
           mempos += 1;

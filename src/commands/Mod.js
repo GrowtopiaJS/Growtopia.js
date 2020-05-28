@@ -5,7 +5,7 @@ module.exports = {
     let player = main.players.get(peerid);
     if (player.states.includes('canWalkInBlocks')) {
       player.removeState('canWalkInBlocks');
-
+      
       p.create()
         .string('OnConsoleMessage')
         .string('You can no longer walk through blocks.')
@@ -17,7 +17,7 @@ module.exports = {
       main.Packet.sendState(peerid);
     } else {
       player.addState('canWalkInBlocks');
-
+      
       p.create()
         .string('OnConsoleMessage')
         .string('You can now walk through blocks.')

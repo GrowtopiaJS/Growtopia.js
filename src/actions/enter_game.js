@@ -52,6 +52,15 @@ module.exports = function(main, packet, peerid, p) {
 
   player.inventory = inv;
 
+  p.create()
+    .string('OnSetBux')
+    .int(player.gems)
+    .int(0)
+    .end();
+
+  main.Packet.sendPacket(peerid, p.return().data, p.return().len);
+  p.reconstruct();
+
   main.players.set(peerid, player);
   main.Packet.setNickname(peerid, player.displayName + '``');
 };

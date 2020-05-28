@@ -23,7 +23,11 @@ class Packet {
    */
 
   sendStringPacket(peerid, type, separator, ...strings) {
-    let buffer = Buffer.concat([Buffer.from([type, 0x00, 0x00, 0x00]), Buffer.from(strings.join(separator))]);
+    let buffer;
+
+    if (type > 0)
+      buffer = Buffer.concat([Buffer.from([type, 0x00, 0x00, 0x00]), Buffer.from(strings.join(separator))]);
+    else buffer = Buffer.from(strings.join(separator));
     return this.#main.getModule().Packets.send(peerid, buffer.toString());
   }
 
@@ -52,13 +56,21 @@ class Packet {
    */
 
   sendQuit(peerid, saveItems = false) {
-    if (saveItems) {
-      let player = this.#main.players.get(peerid);
+    let player = this.#main.players.get(peerid);
 
+    if (player && player.currentWorld) { // remove them from world if not yet removed
+      let world = this.#main.worlds.get(player.currentWorld);
+      if (world) {
+        world.players = world.players.filter(w => w.tankIDName !== player.tankIDName);
+        this.#main.worlds.set(world.name, world);
+      }
+    }
+
+    if (saveItems) {
       if (player) {
         player.hasClothesUpdated = false;
         player.currentWorld = 'EXIT';
-
+        
         this.#main.playersDB.set(player.rawName, player);
         this.#main.players.delete(peerid);
 
@@ -215,7 +227,7 @@ class Packet {
     if (player) {
       let world = this.#main.worlds.get(player.currentWorld);
       if (world) {
-        world.players = world.players.filter(p => p.netID !== player.netID);
+        world.players = world.players.filter(p => p.tankIDName !== player.tankIDName);
         this.#main.worlds.set(world.name, world);
       }
 
@@ -282,7 +294,7 @@ class Packet {
     let y = world.height;
     let square = x * y;
     let nameLen = name.length;
-
+    
     let total = 78 + nameLen + square + 24 + (square * 8);
     let data = Buffer.alloc(total);
 
@@ -344,7 +356,6 @@ class Packet {
     }
 
     this.#main.worlds.set(name, { data, len: total, ...world });
-
     this.sendPacket(peerid, data, total);
   }
 
@@ -457,9 +468,9 @@ class Packet {
 
       let packedData = self.packPlayerMoving(data);
       let effect = Constants.ItemEffects[player.punchEffects[player.punchEffects.length - 1]];
-
+        
       packedData.writeUIntLE(effect, 1, 3);
-
+      
       let waterSpeed = 125.0;
       packedData.writeFloatLE(waterSpeed, 16, 4);
 
@@ -517,18 +528,15 @@ class Packet {
       .float(player.clothes.hair, player.clothes.shirt, player.clothes.pants)
       .float(player.clothes.feet, player.clothes.face, player.clothes.hand)
       .float(player.clothes.back, player.clothes.mask, player.clothes.necklace)
-      .intx(player.states.includes('canWalkInBlocks') ? 0xe6e6e659 : player.skinColor)
+      .intx(player.states.includes('canWalkInBlocks') ? 0xa0 * -1 : player.skinColor)
       .float(player.clothes.ances, 0, 0)
+      .netID(player.netID)
       .end();
 
     let self = this;
 
     this.broadcast(function(peer) {
-      let packet = p.return().data;
-
-      packet.writeIntLE(player.netID, 8, 4);
-
-      self.sendPacket(peer, packet, p.return().len);
+      self.sendPacket(peer, p.return().data, p.return().len);
       if (!notPlayAudio)
         self.sendSound(peer, "audio/change_clothes.wav", 0);
     }, {
@@ -556,15 +564,14 @@ class Packet {
         .float(player.clothes.hair, player.clothes.shirt, player.clothes.pants)
         .float(player.clothes.feet, player.clothes.face, player.clothes.hand)
         .float(player.clothes.back, player.clothes.mask, player.clothes.necklace)
-        .intx(player.states.includes('canWalkInBlocks') ? 0xe6e6e659 : player.skinColor)
+        .intx(player.states.includes('canWalkInBlocks') ? 0xa0 * -1 : player.skinColor)
         .float(player.clothes.ances, 0, 0)
+        .netID(player.netID)
         .end();
 
-      let packet = p.return().data;
       let currentPlayer = self.#main.players.get(peer);
-      packet.writeIntLE(player.netID, 8, 4);
 
-      self.sendPacket(peer, packet, p.return().len);
+      self.sendPacket(peer, p.return().data, p.return().len);
       p.reconstruct();
 
       p.create()
@@ -572,14 +579,12 @@ class Packet {
         .float(currentPlayer.clothes.hair, currentPlayer.clothes.shirt, currentPlayer.clothes.pants)
         .float(currentPlayer.clothes.feet, currentPlayer.clothes.face, currentPlayer.clothes.hand)
         .float(currentPlayer.clothes.back, currentPlayer.clothes.mask, currentPlayer.clothes.necklace)
-        .intx(currentPlayer.states.includes('canWalkInBlocks') ? 0xe6e6e659 : currentPlayer.skinColor)
+        .intx(currentPlayer.states.includes('canWalkInBlocks') ? 0xa0 * -1 : currentPlayer.skinColor)
         .float(currentPlayer.clothes.ances, 0, 0)
+        .netID(currentPlayer.netID)
         .end();
 
-      let packet2 = p.return().data;
-      packet2.writeIntLE(currentPlayer.netID, 8, 4);
-
-      self.sendPacket(peerid, packet2, p.return().len);
+      self.sendPacket(peerid, p.return().data, p.return().len);
       p.reconstruct();
     }, {
       sameWorldCheck: true,
@@ -593,7 +598,7 @@ class Packet {
    * @param {String} peerid The peer id that requested this
    * @param {Number} x X location
    * @param {Number} y Y location
-   * @param {Number} plantingTree The block
+   * @param {Number} plantingTree The block 
    * @param {Number} [netID=-1] The netID
    * @returns {undefined}
    */
@@ -645,14 +650,14 @@ class Packet {
     let self = this;
 
     this.broadcast(function(peer) {
-      let p2 = p.create()
+      p.create()
         .string('OnNameChanged')
         .string(`\`\`\`0${nickname}`)
         .end()
+        .netID(player.netID)
         .return();
-
-      p2.data.writeIntLE(player.netID, 8, 4);
-      self.sendPacket(peer, p2.data, p2.len);
+      
+      self.sendPacket(peer, p.return().data, p.return().len);
       p.reconstruct();
     }, {
       sameWorldCheck: true,

@@ -89,7 +89,7 @@ class PacketCreator {
 
     data.writeUIntLE(this.indexes, this.len, 1);
     data.writeUIntLE(9, this.len + 1, 1);
-    data.writeUIntLE(val, this.len + 2, 4);
+    data.writeIntLE(val, this.len + 2, 4);
     this.len = this.len + 6;
     this.indexes++;
 
@@ -115,7 +115,7 @@ class PacketCreator {
 
     data.writeUIntLE(this.indexes, this.len, 1);
     data.writeUIntLE(5, this.len + 1, 1);
-    data.writeUIntLE(val, this.len + 2, 4);
+    data[val < 0 ? "writeIntLE" : "writeUIntLE"](val, this.len + 2, 4);
     this.len = this.len + 6;
     this.indexes++;
 
@@ -138,7 +138,7 @@ class PacketCreator {
 
     return this;
   }
-
+  
   /**
    * Appends floats to the packet
    * @param {Float} val The fist float to append
@@ -172,6 +172,11 @@ class PacketCreator {
     this.indexes++;
 
     this.data = data;
+    return this;
+  }
+
+  netID(netID) {
+    this.data.writeIntLE(netID, 8, 4);
     return this;
   }
 
