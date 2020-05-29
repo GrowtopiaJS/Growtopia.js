@@ -20,7 +20,8 @@ module.exports = {
     consumables: 8,
     foreground: 17,
     background: 18,
-    weather: 41
+    weather: 41,
+    NPC: 132
   },
 
   tankPackets: {

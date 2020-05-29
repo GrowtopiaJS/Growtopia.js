@@ -5,6 +5,7 @@ const WorldInfo = require('./structs/WorldInfo');
 const CONSTANTS = require('./structs/Constants');
 const PacketCreator = require('./PacketCreator');
 const { execSync, exec } = require('child_process');
+const Constants = require('./structs/Constants');
 
 let p = new PacketCreator();
 let netID = 0;
@@ -449,7 +450,7 @@ class Main extends EventEmitter {
       const collisionType = data[mempos];
       mempos += 1;
 
-      const breakHits = data[mempos];
+      const breakHits = itemCategory === Constants.Blocktypes.NPC ? 4 * 6 : data[mempos];
       mempos += 1;
 
       const dropChance = data.readIntLE(mempos, 4);

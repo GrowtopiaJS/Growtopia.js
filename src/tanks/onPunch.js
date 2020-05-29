@@ -101,8 +101,8 @@ module.exports = function(main, packet, peerid, p, type, data) {
 
         worldBlock.lastPunched = Date.now();
         worldBlock.resetIn = Date.now() + (punchedBlock.dropChance * 1000);
-
-        worldBlock.interval = setInterval(() => {
+          
+        setInterval(() => {
           if (worldBlock.lastPunched < worldBlock.resetIn)
             worldBlock.breakLevel = 0;
         }, punchedBlock.actionType === Constants.Blocktypes.locks ? 10000 : punchedBlock.dropChance * 1000);
