@@ -67,14 +67,8 @@ class Host extends EventEmitter {
     }
 
     const run = async () => {
-      let interval = setInterval(async() => {
-        if (listening)
-          await conn();
-        else {
-          clearInterval(interval);
-          interval = null;
-        }
-      }, 1000);
+      while(listening)
+        await conn();
     }
 
     run();

@@ -6,6 +6,8 @@ module.exports = function(main, packet, peerid, p, type, data) {
   let y = data.punchY;
 
   let player = main.players.get(peerid);
+  if (!player) return;
+
   let world = main.worlds.get(player.currentWorld);
   let newData = new PlayerMoving();
   newData.x = x;

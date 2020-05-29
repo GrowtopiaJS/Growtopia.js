@@ -55,26 +55,21 @@ namespace Host
 		address.host = ENET_HOST_ANY;
 		address.port = data.Get("port").As<Number>().Uint32Value();
 
+		ENetHost* server = enet_host_create(&address, channels, peers, ico, ogo);
+		server->checksum = enet_crc32;
+		enet_host_compress_with_range_coder(server);
+
 		Utils::setAddress(address);
-		Utils::setServer(enet_host_create(&address, channels, peers, ico, ogo));
+		Utils::setServer(server);
 	}
 
 	void start(const CallbackInfo& info)
 	{
 		Env env = info.Env();
 		ENetHost* server = Utils::getServer();
-
-		if (server == NULL)
-		{
-			TypeError::New(env, "Server is null, make sure to create a host first.");
-		}
-
-		server->checksum = enet_crc32;
-		enet_host_compress_with_range_coder(server);
-
 		emit = info[0].As<Function>();
 
-		while(enet_host_service(server, &event, 1000) > 0)
+		while(enet_host_service(server, &event, 0) > 0)
 		{
 			ENetPacket* packet = event.packet;
 			switch(event.type)
