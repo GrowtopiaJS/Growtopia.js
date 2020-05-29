@@ -10,6 +10,9 @@ class WorldItem {
 		this.red = false;
 		this.green = false;
 		this.blue = false;
+		this.lastPunched = 0;
+		this.resetIn = 0;
+		this.interval = -1;
 	}
 };
 

@@ -99,12 +99,13 @@ module.exports = function(main, packet, peerid, p, type, data) {
         newData.packetType = 0x8;
         newData.plantingTree = worldBlock.breakLevel + 1;
 
-        setTimeout(() => {
-          if (worldBlock.breakLevel !== worldBlock.breakLevel + 1) {
-            // clear it
+        worldBlock.lastPunched = Date.now();
+        worldBlock.resetIn = Date.now() + (punchedBlock.dropChance * 1000);
+
+        worldBlock.interval = setInterval(() => {
+          if (worldBlock.lastPunched < worldBlock.resetIn)
             worldBlock.breakLevel = 0;
-          }
-        }, punchedBlock.dropChance * 1000); // dropChance might be the correct value but incorrect name
+        }, punchedBlock.actionType === Constants.Blocktypes.locks ? 10000 : punchedBlock.dropChance * 1000);
 
         world.items[x + (y * world.width)] = worldBlock;
         main.worlds.set(world.name, world);
@@ -163,6 +164,8 @@ module.exports = function(main, packet, peerid, p, type, data) {
           worldBlock.background = 0;
 
         worldBlock.breakLevel = 0;
+        worldBlock.resetIn = 0;
+        worldBlock.interval = -1
         world.items[x + (y * world.width)] = worldBlock;
         main.worlds.set(world.name, world);
       }

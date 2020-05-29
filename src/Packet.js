@@ -271,7 +271,7 @@ class Packet {
       p.reconstruct();
 
       if (player.isLegend)
-        player.displayName = player.displayName.slice(2).slice(0, " of Legend``".length - 3);
+        player.displayName = player.displayName.slice(0, player.displayName.length - " of Legend``".length)
 
       player.currentWorld = "EXIT";
       player.temp.MovementCount = 0;

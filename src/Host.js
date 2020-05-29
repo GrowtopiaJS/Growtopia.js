@@ -127,6 +127,7 @@ class Host extends EventEmitter {
       for (let [name, world] of this.#main.worlds) {
         world.players = [];
         world.breakLevel = 0;
+        world.interval = -1;
 
         this.#main.worldsDB.set(name, world);
         this.#main.worlds.delete(name);
